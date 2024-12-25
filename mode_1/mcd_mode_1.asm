@@ -1,8 +1,4 @@
 ; ----------------------------------------------------------------------
-; Mega CD Mode 1 Library
-; ----------------------------------------------------------------------
-; Mega CD/Mode 1 functions
-; ----------------------------------------------------------------------
 ; Copyright (c) 2024 Devon Artmeier
 ;
 ; Permission to use, copy, modify, and/or distribute this software
@@ -37,17 +33,17 @@ InitMcd:
 	movem.l	d0-d1/a0-a1,-(sp)			; Save registers
 	
 	bsr.w	CheckMcdBios				; Check for a BIOS
-	bne.s	InitMcd_NoBIOS				; If no BIOS was found, branch
+	bne.s	NoMcdBiosFound				; If no BIOS was found, branch
 	
 	bsr.w	ResetMcdGateArray			; Reset the Gate Array
 	bsr.w	ClearMcdCommRegisters			; Clear communication registers
 	
 	move.l	#$100,d0				; Hold reset
 	bsr.w	HoldMcdResetTimed
-	bne.s	InitMcd_HardwareFail			; If it failed, branch
+	bne.s	McdHardwareFail				; If it failed, branch
 	
 	bsr.w	RequestMcdBusTimed			; Request bus access
-	bne.s	InitMcd_HardwareFail			; If it failed, branch
+	bne.s	McdHardwareFail				; If it failed, branch
 	
 	move.b	#0,$A12002				; Disable write protection
 	
@@ -57,32 +53,32 @@ InitMcd:
 	movem.l (sp),d0-d1/a0-a1			; Load Sub CPU program
 	move.l	#$6000,d1
 	bsr.w	CopyMcdPrgRamData
-	bne.s	InitMcd_ProgramLoadFail			; If it failed, branch
+	bne.s	McdProgramLoadFail			; If it failed, branch
 	
 	move.b	#$2A,$A12002				; Enable write protection	
 
 	move.l	#$100,d0				; Release reset
 	bsr.w	ReleaseMcdResetTimed
-	bne.s	InitMcd_HardwareFail			; If it failed, branch
+	bne.s	McdHardwareFail				; If it failed, branch
 	
 	bsr.w	ReleaseMcdBusTimed			; Release bus
-	bne.s	InitMcd_HardwareFail			; If it failed, branch
+	bne.s	McdHardwareFail				; If it failed, branch
 	
 	movem.l (sp)+,d0-d1/a0-a1			; Success
 	moveq	#0,d0
 	rts
 
-InitMcd_NoBIOS:
+NoMcdBiosFound:
 	movem.l (sp)+,d0-d1/a0-a1			; No BIOS found
 	moveq	#1,d0
 	rts
 
-InitMcd_ProgramLoadFail:
+McdProgramLoadFail:
 	movem.l (sp)+,d0-d1/a0-a1			; Program load failed
 	moveq	#2,d0
 	rts
 
-InitMcd_HardwareFail:
+McdHardwareFail:
 	move.b	#%00000010,$A12001			; Halt
 	
 	movem.l (sp)+,d0-d1/a0-a1			; Hardware failure
@@ -101,62 +97,62 @@ CheckMcdBios:
 	movem.l	d0/a1-a3,-(sp)				; Save registers
 	
 	cmpi.l	#"SEGA",$400100				; Is the "SEGA" signature present?
-	bne.s	CheckMcdBios_End			; If not, branch
+	bne.s	McdBiosCheckEnd				; If not, branch
 	cmpi.w	#"BR",$400180				; Is the "Boot ROM" software type present?
-	bne.s	CheckMcdBios_End			; If not, branch
+	bne.s	McdBiosCheckEnd				; If not, branch
 	
 	lea	McdBiosSignatures(pc),a1		; Get known signature location list
 
-CheckMcdBios_FindLoop:
+FindMcdBiosLoop:
 	move.l	(a1)+,d0				; Get pointer to signature data to check
 	movea.l	d0,a2
-	beq.s	CheckMcdBios_NotFound			; If we are at the end of the list, branch
+	beq.s	McdBiosNotFound				; If we are at the end of the list, branch
 	
 	movea.l	(a2)+,a0				; Get pointer to Sub CPU BIOS
 	movea.l	(a2)+,a3				; Get pointer to signature
 
-CheckMcdBios_CheckSignature:
+CheckMcdBiosSignature:
 	move.b	(a2)+,d0				; Get character
-	beq.s	CheckMcdBios_End			; If we are done checking, branch
+	beq.s	McdBiosCheckEnd				; If we are done checking, branch
 	cmp.b	(a3)+,d0				; Does the signature match so far?
-	bne.s	CheckMcdBios_FindLoop			; If not, check the next BIOS
-	bra.s	CheckMcdBios_CheckSignature		; Loop until signature is fully checked
+	bne.s	FindMcdBiosLoop				; If not, check the next BIOS
+	bra.s	CheckMcdBiosSignature			; Loop until signature is fully checked
 
-CheckMcdBios_NotFound:
+McdBiosNotFound:
 	andi	#%11111011,ccr				; BIOS not found
 
-CheckMcdBios_End:
+McdBiosCheckEnd:
 	movem.l	(sp)+,d0/a1-a3				; Restore registers
 	rts
 
 ; ----------------------------------------------------------------------
 
 McdBiosSignatures:
-	dc.l	McdBios_Sega15800
-	dc.l	McdBios_Sega16000
-	dc.l	McdBios_Sega1AD00
-	dc.l	McdBios_Wonder16000
+	dc.l	McdBiosSega15800
+	dc.l	McdBiosSega16000
+	dc.l	McdBiosSega1AD00
+	dc.l	McdBiosWonder16000
 	dc.l	0
 	
-McdBios_Sega15800:
+McdBiosSega15800:
 	dc.l	$415800
 	dc.l	$41586D
 	dc.b	"SEGA", 0
 	even
 	
-McdBios_Sega16000:
+McdBiosSega16000:
 	dc.l	$416000
 	dc.l	$41606D
 	dc.b	"SEGA", 0
 	even
 	
-McdBios_Sega1AD00:
+McdBiosSega1AD00:
 	dc.l	$41AD00
 	dc.l	$41AD6D
 	dc.b	"SEGA", 0
 	even
 	
-McdBios_Wonder16000:
+McdBiosWonder16000:
 	dc.l	$416000
 	dc.l	$41606D
 	dc.b	"WONDER", 0
@@ -179,8 +175,8 @@ McdInitIrq2:
 
 	move.w	#$2DCE-1,d0				; Delay for a while
 
-McdInitIrq2_Wait:
-	dbf	d0,McdInitIrq2_Wait
+WaitMcdInitIrq2:
+	dbf	d0,WaitMcdInitIrq2
 
 	move	(sp)+,sr				; Restore interrupt settings
 	move.w	(sp)+,d0				; Restore d0
@@ -200,8 +196,8 @@ ResetMcdGateArray:
 
 	moveq	#$80-1,d0				; Wait for a bit to process
 
-ResetMcdGateArray_Wait:
-	dbf	d0,ResetMcdGateArray_Wait
+WaitMcdGateArrayReset:
+	dbf	d0,WaitMcdGateArrayReset
 	
 	move.l	(sp)+,d0				; Restore d0
 	rts
@@ -244,17 +240,17 @@ ReleaseMcdReset:
 HoldMcdResetTimed:
 	move.l	d0,-(sp)				; Save d0
 
-HoldMcdResetTimed_Wait:
+WaitMcdResetHold:
 	bclr	#0,$A12001				; Hold reset
-	beq.s	HoldMcdResetTimed_Success		; If it was successful, branch
+	beq.s	McdResetHoldDone			; If it was successful, branch
 	subq.l	#1,d0					; Decrement time left
-	bne.s	HoldMcdResetTimed_Wait			; Loop if we should try again
+	bne.s	WaitMcdResetHold			; Loop if we should try again
 	
 	move.l	(sp)+,d0				; Restore d0
 	andi	#%11111011,ccr				; Failure
 	rts
 	
-HoldMcdResetTimed_Success:
+McdResetHoldDone:
 	move.l	(sp)+,d0				; Restore d0
 	ori	#%00000100,ccr				; Success
 	rts
@@ -271,17 +267,17 @@ HoldMcdResetTimed_Success:
 ReleaseMcdResetTimed:
 	move.l	d0,-(sp)				; Save d0
 
-ReleaseMcdResetTimed_Wait:
+WaitMcdResetRelease:
 	bset	#0,$A12001				; Release reset
-	bne.s	ReleaseMcdResetTimed_Success		; If it was successful, branch
+	bne.s	McdResetReleaseDone			; If it was successful, branch
 	subq.l	#1,d0					; Decrement time left
-	bne.s	ReleaseMcdResetTimed_Wait		; Loop if we should try again
+	bne.s	WaitMcdResetRelease			; Loop if we should try again
 	
 	move.l	(sp)+,d0				; Restore d0
 	andi	#%11111011,ccr				; Failure
 	rts
 	
-ReleaseMcdResetTimed_Success:
+McdResetReleaseDone:
 	move.l	(sp)+,d0				; Restore d0
 	ori	#%00000100,ccr				; Success
 	rts
@@ -316,17 +312,17 @@ ReleaseMcdBus:
 RequestMcdBusTimed:
 	move.l	d0,-(sp)				; Save d0
 
-RequestMcdBusTimed_Wait:
+WaitMcdBusRequest:
 	bset	#1,$A12001				; Request bus access
-	bne.s	RequestMcdBusTimed_Success		; If it was successful, branch
+	bne.s	McdBusRequestDone			; If it was successful, branch
 	subq.l	#1,d0					; Decrement time left
-	bne.s	RequestMcdBusTimed_Wait			; Loop if we should try again
+	bne.s	WaitMcdBusRequest			; Loop if we should try again
 	
 	move.l	(sp)+,d0				; Restore d0
 	andi	#%11111011,ccr				; Failure
 	rts
 	
-RequestMcdBusTimed_Success:
+McdBusRequestDone:
 	move.l	(sp)+,d0				; Restore d0
 	ori	#%00000100,ccr				; Success
 	rts
@@ -343,17 +339,17 @@ RequestMcdBusTimed_Success:
 ReleaseMcdBusTimed:
 	move.l	d0,-(sp)				; Save d0
 
-ReleaseMcdBusTimed_Wait:
+WaitMcdBusRelease:
 	bclr	#1,$A12001				; Release bus
-	beq.s	ReleaseMcdBusTimed_Success		; If it was successful, branch
+	beq.s	McdBusReleaseDone			; If it was successful, branch
 	subq.l	#1,d0					; Decrement time left
-	bne.s	ReleaseMcdBusTimed_Wait			; Loop if we should try again
+	bne.s	WaitMcdBusRelease			; Loop if we should try again
 	
 	move.l	(sp)+,d0				; Restore d0
 	andi	#%11111011,ccr				; Failure
 	rts
 	
-ReleaseMcdBusTimed_Success:
+McdBusReleaseDone:
 	move.l	(sp)+,d0				; Restore d0
 	ori	#%00000100,ccr				; Success
 	rts
@@ -390,27 +386,27 @@ CopyMcdPrgRamData:
 	
 	add.l	d0,d1					; Advance Program RAM offset
 	
-CopyMcdPrgRamData_CopyData:
+CopyMcdPrgRamDataLoop:
 	move.b	(a0),(a1)				; Copy byte
 	cmpm.b	(a0)+,(a1)+				; Did it copy correctly?
-	bne.s	CopyMcdPrgRamData_Fail			; If not, branch
+	bne.s	McdPrgRamDataCopyFail			; If not, branch
 	
 	subq.l	#1,d0					; Decrement number of bytes left to copy
-	beq.s	CopyMcdPrgRamData_Success		; If we are finished, branch
+	beq.s	McdPrgRamDataCopyDone			; If we are finished, branch
 	
 	cmpa.l	#$440000,a1				; Have we reached the end of the bank?
-	bcs.s	CopyMcdPrgRamData_CopyData		; If not, branch
+	bcs.s	CopyMcdPrgRamDataLoop			; If not, branch
 
 	addi.b	#$40,$A12003				; Go to next bank
 	lea	$420000,a1
-	bra.s	CopyMcdPrgRamData_CopyData
+	bra.s	CopyMcdPrgRamDataLoop
 
-CopyMcdPrgRamData_Fail:
+McdPrgRamDataCopyFail:
 	movem.l	(sp)+,d0/d2/a1				; Restore registers
 	andi	#%11111011,ccr				; Failure
 	rts
 	
-CopyMcdPrgRamData_Success:
+McdPrgRamDataCopyDone:
 	movem.l	(sp)+,d0/d2/a1				; Restore registers
 	ori	#%00000100,ccr				; Success
 	rts
