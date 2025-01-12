@@ -45,7 +45,7 @@ GetMcdKosCode:
 ; ----------------------------------------------------------------------
 
 McdKosCode1:
-	dbf	d0,McdKosCopyUncByte			; Decrement bits left to process
+	dbf	d0,CopyMcdKosByte			; Decrement bits left to process
 	move.b	(a0)+,-(sp)				; Read from data stream
 	move.b	(a0)+,-(sp)
 	move.w	(sp)+,d1
