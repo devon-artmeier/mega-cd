@@ -1,5 +1,3 @@
-# Mega CD Libraries and Tools
+# Sega Mega CD Framework
 
-A collection of libraries and tools for the Sega Mega CD.
-
-* Mode 1
+A framework for the Sega Mega CD.
