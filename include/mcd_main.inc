@@ -29,6 +29,19 @@ USE_SRAM_32K		equ 3					; 32 KiB SRAM
 NO_MAPPER		equ 0					; No mapper
 USE_MAPPER		equ 1					; Use mapper
 
+ALLOW_DOMESTIC_NTSC	equ %00000001				; Allow domestic NTSC models (Japan/South Korea/Taiwan)
+ALLOW_DOMESTIC_PAL	equ %00000010				; Allow domestic PAL models
+ALLOW_DOMESTIC		equ %00000011				; Allow domestic models
+ALLOW_OVERSEAS_NTSC	equ %00000100				; Allow overseas NTSC models (USA/Canada/Brazil)
+ALLOW_OVERSEAS_PAL	equ %00001000				; Allow overseas PAL models (Europe/Hong Kong)
+ALLOW_OVERSEAS		equ %00001100				; Allow overseas models
+ALLOW_NTSC		equ %00000101				; Allow NTSC models
+ALLOW_PAL		equ %00001010				; Allow PAL models
+ALLOW_ALL_MODELS	equ %00001111				; Allow all models
+ALLOW_JAPAN		equ %00000001				; Allow Japan/South Korea/Taiwan models
+ALLOW_USA		equ %00000100				; Allow USA/Canada/Brazil models
+ALLOW_EUROPE		equ %00001000				; Allow Europe/Hong Kong models
+
 ; ------------------------------------------------------------------------------
 ; Cartridge
 ; ------------------------------------------------------------------------------
@@ -61,15 +74,15 @@ EXPANSION_SIZE		equ $400000				; Expansion memory size
 
 	if CONFIG_MCD_MODE=USE_MCD_MODE_1
 	if CONFIG_SRAM<>NO_SRAM
-SRAM			equ CARTRIDGE+$200001			; SRAM start
+SRAM			equ $200001				; SRAM start
 	if CONFIG_SRAM=USE_SRAM_8K
-SRAM_END		equ CARTRIDGE+$203FFF			; SRAM end
+SRAM_END		equ $203FFF				; SRAM end
 SRAM_SIZE		equ $2000				; SRAM size
 	elseif CONFIG_SRAM=USE_SRAM_16K
-SRAM_END		equ CARTRIDGE+$207FFF			; SRAM end
+SRAM_END		equ $207FFF				; SRAM end
 SRAM_SIZE		equ $4000				; SRAM size
 	elseif CONFIG_SRAM=USE_SRAM_32K
-SRAM_END		equ CARTRIDGE+$20FFFF			; SRAM end
+SRAM_END		equ $20FFFF				; SRAM end
 SRAM_SIZE		equ $8000				; SRAM size
 	endif
 
@@ -82,22 +95,22 @@ SRAMR_PROTECT		equ %00000010
 	endif
 
 	if CONFIG_MAPPER=USE_MAPPER
-CART_BANK_0		equ CARTRIDGE				; Cartridge bank 0
-CART_BANK_0_END		equ CARTRIDGE+$7FFFF			; Cartridge bank 0 end
-CART_BANK_1		equ CARTRIDGE+$80000			; Cartridge bank 1
-CART_BANK_1_END		equ CARTRIDGE+$FFFFF			; Cartridge bank 1 end
-CART_BANK_2		equ CARTRIDGE+$100000			; Cartridge bank 2
-CART_BANK_2_END		equ CARTRIDGE+$17FFFF			; Cartridge bank 2 end
-CART_BANK_3		equ CARTRIDGE+$180000			; Cartridge bank 3
-CART_BANK_3_END		equ CARTRIDGE+$1FFFFF			; Cartridge bank 3 end
-CART_BANK_4		equ CARTRIDGE+$200000			; Cartridge bank 4
-CART_BANK_4_END		equ CARTRIDGE+$27FFFF			; Cartridge bank 4 end
-CART_BANK_5		equ CARTRIDGE+$280000			; Cartridge bank 5
-CART_BANK_5_END		equ CARTRIDGE+$2FFFFF			; Cartridge bank 5 end
-CART_BANK_6		equ CARTRIDGE+$300000			; Cartridge bank 6
-CART_BANK_6_END		equ CARTRIDGE+$37FFFF			; Cartridge bank 6 end
-CART_BANK_7		equ CARTRIDGE+$380000			; Cartridge bank 7
-CART_BANK_7_END		equ CARTRIDGE+$3FFFFF			; Cartridge bank 7 end
+CART_BANK_0		equ 0					; Cartridge bank 0
+CART_BANK_0_END		equ $7FFFF				; Cartridge bank 0 end
+CART_BANK_1		equ $80000				; Cartridge bank 1
+CART_BANK_1_END		equ $FFFFF				; Cartridge bank 1 end
+CART_BANK_2		equ $100000				; Cartridge bank 2
+CART_BANK_2_END		equ $17FFFF				; Cartridge bank 2 end
+CART_BANK_3		equ $180000				; Cartridge bank 3
+CART_BANK_3_END		equ $1FFFFF				; Cartridge bank 3 end
+CART_BANK_4		equ $200000				; Cartridge bank 4
+CART_BANK_4_END		equ $27FFFF				; Cartridge bank 4 end
+CART_BANK_5		equ $280000				; Cartridge bank 5
+CART_BANK_5_END		equ $2FFFFF				; Cartridge bank 5 end
+CART_BANK_6		equ $300000				; Cartridge bank 6
+CART_BANK_6_END		equ $37FFFF				; Cartridge bank 6 end
+CART_BANK_7		equ $380000				; Cartridge bank 7
+CART_BANK_7_END		equ $3FFFFF				; Cartridge bank 7 end
 CART_BANK_SIZE		equ $80000				; Cartridge bank size
 
 MAPPER_REGS		equ $A130F3				; Mapper registers
@@ -116,15 +129,15 @@ MAPPER_BANK_7		equ $A130FF				; Mapper bank 7
 ; ------------------------------------------------------------------------------
 
 	if CONFIG_MCD_MODE=USE_MCD_MODE_2
-RAM_CART_ID		equ CARTRIDGE+1				; RAM cartridge ID
-RAM_CART_DATA		equ CARTRIDGE+$200001			; RAM cartridge data start
-RAM_CART_DATA_END	equ CARTRIDGE+$2FFFFF			; RAM cartridge data end
+RAM_CART_ID		equ $200001				; RAM cartridge ID
+RAM_CART_DATA		equ $600001				; RAM cartridge data start
+RAM_CART_DATA_END	equ $6FFFFF				; RAM cartridge data end
 RAM_CART_DATA_SIZE	equ $80000				; RAM cartridge data size
 
-SPECIAL_CART_ID		equ CARTRIDGE+$10			; Special cartridge ID
-SPECIAL_CART_ENTRY	equ CARTRIDGE+$20			; Special cartridge entry point
+SPECIAL_CART_ID		equ $400010				; Special cartridge ID
+SPECIAL_CART_ENTRY	equ $400020				; Special cartridge entry point
 
-RAM_CART_CTRL		equ CARTRIDGE+$3FFFFF			; RAM cartridge control
+RAM_CART_CTRL		equ $7FFFFF				; RAM cartridge control
 	endif
 
 ; ------------------------------------------------------------------------------
@@ -640,9 +653,9 @@ IOR_DOMESTIC_NSTC	equ %00000000				; Domestic NTSC model
 IOR_DOMESTIC_PAL	equ %01000000				; Domestic PAL model
 IOR_OVERSEAS_NSTC	equ %10000000				; Overseas NTSC model
 IOR_OVERSEAS_PAL	equ %11000000				; Overseas PAL model
-IOR_JAPAN		equ %00000000				; Japanese model
-IOR_USA			equ %10000000				; USA model
-IOR_EUROPE		equ %11000000				; European model
+IOR_JAPAN		equ %00000000				; Japan/South Korea/Taiwan model
+IOR_USA			equ %10000000				; USA/Canada/Brazil model
+IOR_EUROPE		equ %11000000				; Europe/Hong Kong model
 
 IOR_PD0_BIT		equ 0					; Port data bit 0
 IOR_PD0			equ %00000001
