@@ -29,17 +29,8 @@ USE_SRAM_32K		equ 3					; 32 KiB SRAM
 NO_MAPPER		equ 0					; No mapper
 USE_MAPPER		equ 1					; Use mapper
 
-USE_DOMESTIC_NTSC	equ %0001				; Allow domestic NTSC models
-USE_DOMESTIC_PAL	equ %0010				; Allow domestic PAL models
-USE_OVERSEAS_NTSC	equ %0100				; Allow overseas NTSC models
-USE_OVERSEAS_PAL	equ %1000				; Allow overseas PAL models
-USE_DOMESTIC		equ %0011				; Allow domestic models
-USE_OVERSEAS		equ %1100				; Allow overseas models
-USE_NTSC		equ %0101				; Allow NTSC models
-USE_PAL			equ %1010				; Allow PAL models
-USE_ALL_MODELS		equ %1111				; Allow all models
-USE_JAPAN		equ %0001				; Allow Japan models
-USE_USA			equ %0100				; Allow USA models
-USE_EUROPE		equ %1000				; Allow Europe models
+ALLOW_JAPAN		equ %001				; Allow Japan models
+ALLOW_USA		equ %010				; Allow USA models
+ALLOW_EUROPE		equ %100				; Allow Europe models
 
 ; ------------------------------------------------------------------------------
