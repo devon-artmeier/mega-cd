@@ -14,77 +14,24 @@
 ; PERFORMANCE OF THIS SOFTWARE.
 ; ------------------------------------------------------------------------------
 
-	include	"mcd_common.inc"
-
 ; ------------------------------------------------------------------------------
 ; Cartridge
 ; ------------------------------------------------------------------------------
 
-	if CONFIG_MCD_MODE=USE_MCD_MODE_1
+	if USE_MCD_MODE_1<>0
 CARTRIDGE		equ 0					; Cartridge start
 CARTRIDGE_END		equ $3FFFFF				; Cartridge end
-	elseif CONFIG_MCD_MODE=USE_MCD_MODE_2
+	else
 CARTRIDGE		equ $400000				; Cartridge start
 CARTRIDGE_END		equ $7FFFFF				; Cartridge end
 	endif
 CARTRIDGE_SIZE		equ $400000				; Cartridge size
 
 ; ------------------------------------------------------------------------------
-; SRAM (mode 1)
-; ------------------------------------------------------------------------------
-
-	if (CONFIG_MCD_MODE=USE_MCD_MODE_1)&(CONFIG_SRAM<>NO_SRAM)
-	if CONFIG_SRAM=USE_SRAM_8K
-SRAM_SIZE		equ $2000				; SRAM size (8K)
-	elseif CONFIG_SRAM=USE_SRAM_16K
-SRAM_SIZE		equ $4000				; SRAM size (16K)
-	elseif CONFIG_SRAM=USE_SRAM_32K
-SRAM_SIZE		equ $8000				; SRAM size (32K)
-	endif
-SRAM			equ $200001				; SRAM start
-SRAM_END		equ $200001+((SRAM_SIZE-1)*2)		; SRAM end
-
-SRAM_CTRL		equ $A130F1				; SRAM control
-	endif
-	
-; ------------------------------------------------------------------------------
-; Mapper (mode 1)
-; ------------------------------------------------------------------------------
-
-	if (CONFIG_MCD_MODE=USE_MCD_MODE_1)&(CONFIG_MAPPER=USE_MAPPER)
-CART_BANK_0		equ 0					; Cartridge bank 0
-CART_BANK_0_END		equ $7FFFF				; Cartridge bank 0 end
-CART_BANK_1		equ $80000				; Cartridge bank 1
-CART_BANK_1_END		equ $FFFFF				; Cartridge bank 1 end
-CART_BANK_2		equ $100000				; Cartridge bank 2
-CART_BANK_2_END		equ $17FFFF				; Cartridge bank 2 end
-CART_BANK_3		equ $180000				; Cartridge bank 3
-CART_BANK_3_END		equ $1FFFFF				; Cartridge bank 3 end
-CART_BANK_4		equ $200000				; Cartridge bank 4
-CART_BANK_4_END		equ $27FFFF				; Cartridge bank 4 end
-CART_BANK_5		equ $280000				; Cartridge bank 5
-CART_BANK_5_END		equ $2FFFFF				; Cartridge bank 5 end
-CART_BANK_6		equ $300000				; Cartridge bank 6
-CART_BANK_6_END		equ $37FFFF				; Cartridge bank 6 end
-CART_BANK_7		equ $380000				; Cartridge bank 7
-CART_BANK_7_END		equ $3FFFFF				; Cartridge bank 7 end
-CART_BANK_SIZE		equ $80000				; Cartridge bank size
-
-MAPPER_REGS		equ $A130F3				; Mapper registers
-MAPPER_BANK_1		equ $A130F3				; Mapper bank 1
-MAPPER_BANK_2		equ $A130F5				; Mapper bank 2
-MAPPER_BANK_3		equ $A130F7				; Mapper bank 3
-MAPPER_BANK_4		equ $A130F9				; Mapper bank 4
-MAPPER_BANK_5		equ $A130FB				; Mapper bank 5
-MAPPER_BANK_6		equ $A130FD				; Mapper bank 6
-MAPPER_BANK_7		equ $A130FF				; Mapper bank 7
-	endif
-
-; ------------------------------------------------------------------------------
 ; RAM cartridge (mode 2)
 ; ------------------------------------------------------------------------------
 
-	if CONFIG_MCD_MODE=USE_MCD_MODE_2
+	if USE_MCD_MODE_1=0
 RAM_CART_ID		equ $400001				; RAM cartridge ID
 RAM_CART		equ $600001				; RAM cartridge data start
 RAM_CART_END		equ $6FFFFF				; RAM cartridge data end
@@ -100,10 +47,10 @@ SPECIAL_CART_ENTRY	equ $400020				; Special cartridge entry point
 ; Expansion
 ; ------------------------------------------------------------------------------
 
-	if CONFIG_MCD_MODE=USE_MCD_MODE_1
+	if USE_MCD_MODE_1<>0
 EXPANSION		equ $400000				; Expansion start
 EXPANSION_END		equ $7FFFFF				; Expansion end
-	elseif CONFIG_MCD_MODE=USE_MCD_MODE_2
+	else
 EXPANSION		equ 0					; Expansion start
 EXPANSION_END		equ $3FFFFF				; Expansion end
 	endif
@@ -117,7 +64,7 @@ WORK_RAM		equ $FFFF0000				; Work RAM start
 WORK_RAM_END		equ $FFFFFFFF				; Work RAM end
 WORK_RAM_SIZE		equ $10000				; Work RAM size
 
-	if CONFIG_MCD_MODE=USE_MCD_MODE_2
+	if USE_MCD_MODE_1=0
 _EXCPT			equ $FFFFFD00				; Exception
 _LEVEL6			equ $FFFFFD06				; V-BLANK interrupt
 _LEVEL4			equ $FFFFFD0C				; H-BLANK interrupt
@@ -158,7 +105,6 @@ VDP_PORTS		equ $C00000				; Ports
 VDP_DATA		equ $C00000				; Data port
 VDP_CTRL		equ $C00004				; Control port
 VDP_HV			equ $C00008				; H/V counter
-VDP_DEBUG		equ $C0000C				; Debug register
 
 ; ------------------------------------------------------------------------------
 ; YM2612
@@ -256,7 +202,9 @@ MCD_SUB_CTRL		equ $A12001				; Sub CPU control
 MCD_PROTECT		equ $A12002				; Program RAM write protection
 MCD_MEM_MODE		equ $A12003				; Memory mode
 MCD_CDC_MODE		equ $A12004				; CDC mode
+	if USE_MCD_MODE_1=0
 MCD_HBLANK		equ $A12006				; H-BLANK interrupt address (mode 2)
+	endif
 MCD_CDC_HOST		equ $A12008				; CDC host data
 MCD_STOPWATCH		equ $A1200C				; Stopwatch
 MCD_COMM_FLAGS		equ $A1200E				; Communication flags
