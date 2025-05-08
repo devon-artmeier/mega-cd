@@ -24,7 +24,7 @@
 
 	xdef INT_InitCdDriveCmd
 INT_InitCdDriveCmd:
-	lea	bios_params.w,a0				; Initialize CD drive
+	lea	INT_bios_params.w,a0				; Initialize CD drive
 	move.w	#(1<<8)|$FF,(a0)
 	moveq	#DRVINIT,d0
 	jmp	_CDBIOS

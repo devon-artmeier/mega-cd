@@ -129,7 +129,7 @@ INT_MegaDriveIrq:
 
 	section bss
 
-	xdef bios_params
-bios_params		ds.b 8					; BIOS parameters
+	xdef INT_bios_params
+INT_bios_params		ds.b 8					; BIOS parameters
 
 ; ------------------------------------------------------------------------------

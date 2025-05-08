@@ -27,7 +27,7 @@
 
 	xdef INT_PlayCddaAllCmd
 INT_PlayCddaAllCmd:
-	lea	bios_params.w,a0				; Play all CDDA tracks
+	lea	INT_bios_params.w,a0				; Play all CDDA tracks
 	move.w	MCD_MAIN_COMM_0,(a0)
 	moveq	#MSCPLAY,d0
 	jmp	_CDBIOS
@@ -41,7 +41,7 @@ INT_PlayCddaAllCmd:
 
 	xdef INT_PlayCddaCmd
 INT_PlayCddaCmd:
-	lea	bios_params.w,a0				; Play CDDA track
+	lea	INT_bios_params.w,a0				; Play CDDA track
 	move.w	MCD_MAIN_COMM_0,(a0)
 	moveq	#MSCPLAY1,d0
 	jmp	_CDBIOS
@@ -55,7 +55,7 @@ INT_PlayCddaCmd:
 
 	xdef INT_LoopCddaCmd
 INT_LoopCddaCmd:
-	lea	bios_params.w,a0				; Loop CDDA track
+	lea	INT_bios_params.w,a0				; Loop CDDA track
 	move.w	MCD_MAIN_COMM_0,(a0)
 	moveq	#MSCPLAYR,d0
 	jmp	_CDBIOS
@@ -69,7 +69,7 @@ INT_LoopCddaCmd:
 
 	xdef INT_PlayCddaTime
 INT_PlayCddaTime:
-	lea	bios_params.w,a0				; Play CDDA at time
+	lea	INT_bios_params.w,a0				; Play CDDA at time
 	move.l	MCD_MAIN_COMM_0,(a0)
 	moveq	#MSCPLAYT,d0
 	jmp	_CDBIOS
@@ -133,7 +133,7 @@ INT_SetCddaSpeedCmd:
 
 	xdef INT_SeekCddaCmd
 INT_SeekCddaCmd:
-	lea	bios_params.w,a0				; Seek to CDDA track
+	lea	INT_bios_params.w,a0				; Seek to CDDA track
 	move.w	MCD_MAIN_COMM_0,(a0)
 	moveq	#MSCSEEK,d0
 	jmp	_CDBIOS
@@ -147,7 +147,7 @@ INT_SeekCddaCmd:
 
 	xdef INT_SeekCddaTimeCmd
 INT_SeekCddaTimeCmd:
-	lea	bios_params.w,a0				; Seek to CDDA time
+	lea	INT_bios_params.w,a0				; Seek to CDDA time
 	move.l	MCD_MAIN_COMM_0,(a0)
 	moveq	#MSCSEEKT,d0
 	jmp	_CDBIOS
