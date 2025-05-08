@@ -34,24 +34,24 @@
 
 	xdef InitSubCpu
 InitSubCpu:
-	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+	movem.l	d0-d1/a0-a2,-(sp)				; Save registers
 
 	bsr.w	FindBios					; Find BIOS
 	bne.s	.Fail						; If no BIOS was found, branch
-	
-	lea	MCD_MAIN_COMMS,a1				; Clear communication registers
-	moveq	#0,d1
-	move.b	d1,MCD_MAIN_FLAG-MCD_MAIN_COMMS(a1)
-	move.l	d1,(a1)+
-	move.l	d1,(a1)+
-	move.l	d1,(a1)+
-	move.l	d1,(a1)+
 
-	lea	MCD_SUB_CTRL-MCD_SUB_COMMS(a1),a1		; Reset sequence
-	move.w	#$FF00,1(a1)
-	move.b	#3,(a1)
-	move.b	#2,(a1)
-	move.b	d1,(a1)
+	lea	MCD_MAIN_COMMS,a2				; Clear communication registers
+	moveq	#0,d1
+	move.b	d1,MCD_MAIN_FLAG-MCD_MAIN_COMMS(a2)
+	move.l	d1,(a2)+
+	move.l	d1,(a2)+
+	move.l	d1,(a2)+
+	move.l	d1,(a2)+
+
+	lea	MCD_SUB_CTRL-MCD_SUB_COMMS(a2),a2		; Reset sequence
+	move.w	#$FF00,1(a2)
+	move.b	#3,(a2)
+	move.b	#2,(a2)
+	move.b	d1,(a2)
 
 	moveq	#$80-1,d1					; Wait for a bit to process
 	dbf	d1,*
@@ -72,12 +72,12 @@ InitSubCpu:
 	bsr.w	ReleaseSubCpuReset				; Release Sub CPU reset
 	bsr.w	ReleaseSubCpuBus				; Release Sub CPU bus
 
-	movem.l (sp)+,d0-d1/a0-a1				; Success
+	movem.l (sp)+,d0-d1/a0-a2				; Success
 	ori	#4,ccr
 	rts
 
 .Fail:
-	movem.l (sp)+,d0-d1/a0-a1				; Failure
+	movem.l (sp)+,d0-d1/a0-a2				; Failure
 	andi	#~4,ccr
 	rts
 
@@ -94,16 +94,19 @@ FindBios:
 	
 	lea	BIOS+$100,a2					; Get BIOS header
 	cmpi.l	#"SEGA",(a2)					; Is the "SEGA" signature present?
-	bne.s	.End						; If not, branch
+	bne.s	.NotFound					; If not, branch
 	cmpi.w	#"BR",$80(a2)					; Is the "Boot ROM" software type present?
-	bne.s	.End						; If not, branch
+	bne.s	.NotFound					; If not, branch
 	
 	lea	.Signatures(pc),a2				; Get known signature location list
 
 .FindLoop:
-	move.l	(a2)+,d0					; Get pointer to signature data to check
-	movea.l	d0,a3
+	moveq	#0,d0						; Get next index of signature to check
+	move.w	(a2)+,d0
 	beq.s	.NotFound					; If we are at the end of the list, branch
+	
+	add.l	a2,d0						; Get pointer to signature data to check
+	movea.l	d0,a3
 	
 	movea.l	(a3)+,a1					; Get pointer to Sub CPU BIOS
 	movea.l	(a3)+,a4					; Get pointer to signature
@@ -125,11 +128,11 @@ FindBios:
 ; ------------------------------------------------------------------------------
 
 .Signatures:
-	dc.l	.Sega15800
-	dc.l	.Sega16000
-	dc.l	.Sega1AD00
-	dc.l	.Wonder16000
-	dc.l	0
+	dc.w	.Sega15800-*+2
+	dc.w	.Sega16000-*+2
+	dc.w	.Sega1AD00-*+2
+	dc.w	.Wonder16000-*+2
+	dc.w	0
 	
 .Sega15800:
 	dc.l	BIOS+$15800

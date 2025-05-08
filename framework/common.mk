@@ -6,6 +6,7 @@ VASM                 := vasmm68k_mot
 VLINK                := vlink
 MKASMDEP             := mkasmdep
 DUMPASMSYM           := dumpasmsym
+MDROMFIX             := mdromfix
 
 VASM_FLAGS           := -Fvobj -quiet -ldots -spaces
 VLINK_FLAGS          := -b rawbin

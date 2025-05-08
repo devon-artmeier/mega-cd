@@ -143,7 +143,7 @@ HardReset:
 	cmp.w	CARTRIDGE+$18E,d0				; Is the checksum correct?
 	beq.s	.ChecksumGood					; If so, branch
 
-	move.l	(a0),(a5)					; Display red
+	vdpCmd move.l,0,CRAM,WRITE,(a5)				; Display red
 	move.w	#$E,(a4)
 	bra.w	*						; Halt
 
@@ -153,7 +153,7 @@ HardReset:
 	bsr.w	McdLib+InitSubCpu
 	beq.s	.GoToMain					; If it was successful, branch
 
-	move.l	(a0),(a5)					; Display yellow
+	vdpCmd move.l,0,CRAM,WRITE,(a5)				; Display yellow
 	move.w	#$EE,(a4)
 	bra.w	*						; Halt
 
@@ -209,13 +209,7 @@ HardReset:
 	dc.b	$F3						; di
 	dc.b	$F3						; di
 	dc.b	$C3, $00, $00					; jp 0000h
-	even
 .Z80PrgEnd:
-
-; ------------------------------------------------------------------------------
-; Error color
-; ------------------------------------------------------------------------------
-
-	vdpCmd dc.l,0,CRAM,WRITE
+	even
 
 ; ------------------------------------------------------------------------------

@@ -63,6 +63,7 @@ endif
 $(OUT): $(OBJ) | $(OUT_PATH)
 	$(LINK_MSG)
 	@$(VLINK) $(VLINK_FLAGS) -T $(LINKER) -o $@ $^
+	@$(MDROMFIX) -q $@
 
 $(OBJ): $(BUILD_PATH)/%.o: $(SRC_PATH)/%.asm | $(BUILD_PATH) $(DEPEND)
 	$(ASSEMBLE_MSG)
