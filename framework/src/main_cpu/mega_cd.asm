@@ -276,6 +276,26 @@ GetCdDriveStatus:
 	rts
 
 ; ------------------------------------------------------------------------------
+; Check if the CD drive is ready
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - Not ready/Ready
+; ------------------------------------------------------------------------------
+
+	xdef CheckCdDriveReady
+CheckCdDriveReady:
+	move.w	d0,-(sp)					; Save registers
+
+	bsr.s	GetCdDriveStatus				; Get CD drive ready status
+	move.w	d0,-(sp)
+
+	move.w	(sp)+,d0					; Restore registers
+	
+	andi.w	#$F000,-4(sp)					; Check if CD drive is ready
+	eori	#4,sr
+	rts
+
+; ------------------------------------------------------------------------------
 ; Wait for the CD drive to be ready
 ; ------------------------------------------------------------------------------
 
@@ -285,9 +305,8 @@ WaitCdDriveReady:
 	move	#$2700,sr					; Disable interrupts
 
 .Wait:
-	bsr.s	GetCdDriveStatus				; Is the CD drive ready?
-	andi.w	#$F000,d0
-	bne.s	.Wait						; If not, wait
+	bsr.s	CheckCdDriveReady				; Is the CD drive ready?
+	beq.s	.Wait						; If not, wait
 
 	move	(sp)+,sr					; Restore interrupts
 	rts
