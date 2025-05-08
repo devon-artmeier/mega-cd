@@ -1,0 +1,11 @@
+MEMORY {
+	rom: org=0, len=0x400000
+}
+
+SECTIONS {
+	code: {
+		*(code);
+		. = ALIGN(2);
+		*(data);
+	} > rom
+}

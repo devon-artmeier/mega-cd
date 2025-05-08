@@ -1,4 +1,10 @@
 # ------------------------------------------------------------------------------
+# Common
+# ------------------------------------------------------------------------------
+
+include common.mk
+
+# ------------------------------------------------------------------------------
 # Paths
 # ------------------------------------------------------------------------------
 
@@ -10,27 +16,13 @@ BUILD_PATH           := $(OUT_PATH)/build
 OUT_PATH_EXISTS      := $(wildcard $(OUT_PATH))
 
 # ------------------------------------------------------------------------------
-# Tools
+# Tool flags
 # ------------------------------------------------------------------------------
 
-VASM                 := vasmm68k_mot
-VLINK                := vlink
-MKASMDEP             := mkasmdep
-DUMPASMSYM           := dumpasmsym
-
-VASM_FLAGS           := -Fvobj -I$(INCLUDE_PATH) -quiet -ldots -spaces
-VLINK_FLAGS          := -b rawbin -symctrl=4
-MKASMDEP_FLAGS       := -r -i $(INCLUDE_PATH)
-DUMPASMSYM_FLAGS     := -m asm -xp INT_
-
-# ------------------------------------------------------------------------------
-# Messages
-# ------------------------------------------------------------------------------
-
-DEPEND_MSG            = @echo Generating $@
-ASSEMBLE_MSG          = @echo Assembling $<
-LINK_MSG              = @echo Linking    $@
-EXPORT_MSG            = @echo Exporting  $@
+VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH)
+VLINK_FLAGS          := $(VLINK_FLAGS) -symctrl=4
+MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH)
+DUMPASMSYM_FLAGS     := $(DUMPASMSYM_FLAGS) -xp INT_
 
 # ------------------------------------------------------------------------------
 # Main CPU functions files
@@ -107,7 +99,7 @@ $(OUT_MAIN_CART): $(OBJ_MAIN_CART) | $(OUT_PATH)
 	$(LINK_MSG)
 	@$(VLINK) $(VLINK_FLAGS) -T $(LINKER_MAIN) -symfile $(SYM_MAIN_CART) -o $@ $^
 
-$(OBJ_MAIN_CART): $(BUILD_PATH_MAIN_CART)/%.o: $(SRC_PATH_MAIN)/%.asm | $(DEPEND_MAIN_CART)
+$(OBJ_MAIN_CART): $(BUILD_PATH_MAIN_CART)/%.o: $(SRC_PATH_MAIN)/%.asm | $(BUILD_PATH_MAIN_CART) $(DEPEND_MAIN_CART)
 	$(ASSEMBLE_MSG)
 	@$(VASM) $(VASM_FLAGS) -DUSE_MCD_MODE_1=1 -L $(patsubst %.o,%.lst,$@) -o $@ $<
 
@@ -127,7 +119,7 @@ $(OUT_MAIN_CD): $(OBJ_MAIN_CD) | $(OUT_PATH)
 	$(LINK_MSG)
 	@$(VLINK) $(VLINK_FLAGS) -T $(LINKER_MAIN) -symfile $(SYM_MAIN_CD) -o $@ $^
 
-$(OBJ_MAIN_CD): $(BUILD_PATH_MAIN_CD)/%.o: $(SRC_PATH_MAIN)/%.asm | $(DEPEND_MAIN_CD)
+$(OBJ_MAIN_CD): $(BUILD_PATH_MAIN_CD)/%.o: $(SRC_PATH_MAIN)/%.asm | $(BUILD_PATH_MAIN_CD) $(DEPEND_MAIN_CD)
 	$(ASSEMBLE_MSG)
 	@$(VASM) $(VASM_FLAGS) -DUSE_MCD_MODE_1=0 -L $(patsubst %.o,%.lst,$@) -o $@ $<
 
@@ -147,7 +139,7 @@ $(OUT_SUB): $(OBJ_SUB) | $(OUT_PATH)
 	$(LINK_MSG)
 	@$(VLINK) $(VLINK_FLAGS) -T $(LINKER_SUB) -symfile $(SYM_SUB) -o $@ $^
 
-$(OBJ_SUB): $(BUILD_PATH)/%.o: $(SRC_PATH)/%.asm | $(DEPEND_SUB)
+$(OBJ_SUB): $(BUILD_PATH)/%.o: $(SRC_PATH)/%.asm | $(BUILD_PATH_SUB) $(DEPEND_SUB)
 	$(ASSEMBLE_MSG)
 	@$(VASM) $(VASM_FLAGS) -L $(patsubst %.o,%.lst,$@) -o $@ $<
 
