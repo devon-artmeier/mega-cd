@@ -21,7 +21,7 @@
 ; ------------------------------------------------------------------------------
 ; Check if the Sub CPU's IRQ2 is enabled
 ; ------------------------------------------------------------------------------
-; PARAMETERS:
+; RETURNS:
 ;	eq/ne - Disabled/Enabled
 ; ------------------------------------------------------------------------------
 
@@ -38,7 +38,32 @@ CheckSubCpuIrq2:
 TriggerSubCpuIrq2:
 	bset	#0,MCD_IRQ2					; Trigger IRQ2
 	rts
-	
+
+; ------------------------------------------------------------------------------
+; Check if the Sub CPU is running
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - Not running/Running
+; ------------------------------------------------------------------------------
+
+	xdef CheckSubCpuRun
+CheckSubCpuRun:
+	btst	#0,MCD_SUB_CTRL					; Check if the Sub CPU is running
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if Sub CPU reset is held
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - Not held/Held
+; ------------------------------------------------------------------------------
+
+	xdef CheckSubCpuReset
+CheckSubCpuReset:
+	bsr.s	CheckSubCpuRun					; Check if reset is held
+	eori	#4,sr
+	rts
+
 ; ------------------------------------------------------------------------------
 ; Hold Sub CPU reset
 ; ------------------------------------------------------------------------------
@@ -57,6 +82,18 @@ HoldSubCpuReset:
 ReleaseSubCpuReset:
 	bset	#0,MCD_SUB_CTRL					; Release reset
 	beq.s	ReleaseSubCpuReset				; If it hasn't been released, wait
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we have access to the Sub CPU's bus
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - No access/Access
+; ------------------------------------------------------------------------------
+
+	xdef CheckSubCpuBus
+CheckSubCpuBus:
+	btst	#1,MCD_SUB_CTRL					; Check if we have access
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -80,14 +117,29 @@ ReleaseSubCpuBus:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Check if we have access to Word RAM
+; Check if we have access to Word RAM bank 0
 ; ------------------------------------------------------------------------------
-; PARAMETERS:
+; RETURNS:
+;	eq/ne - No access/Access
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRamBank0
+CheckWordRamBank0:
+	bsr.s	CheckWordRamBank1				; Check if we have access
+	eori	#4,sr
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we have access to Word RAM or if we have access to Word RAM bank 1
+; ------------------------------------------------------------------------------
+; RETURNS:
 ;	eq/ne - No access/Access
 ; ------------------------------------------------------------------------------
 
 	xdef CheckWordRam
+	xdef CheckWordRamBank1
 CheckWordRam:
+CheckWordRamBank1:
 	btst	#0,MCD_MEM_MODE					; Check if we have access
 	rts
 
@@ -97,18 +149,49 @@ CheckWordRam:
 
 	xdef GiveWordRam
 GiveWordRam:
-	bset	#1,MCD_MEM_MODE					; Give Word RAM access to the Sub CPU
+	bset	#1,MCD_MEM_MODE					; Give access to the Sub CPU
 	beq.s	GiveWordRam					; If it hasn't been given, wait
 	rts
 
 ; ------------------------------------------------------------------------------
-; Wait for Word RAM access
+; Wait for Word RAM bank 0 access
+; ------------------------------------------------------------------------------
+
+	xdef WaitWordRamBank0
+WaitWordRamBank0:
+	bsr.s	CheckWordRamBank1				; Do we have access?
+	bne.s	WaitWordRamBank0				; If not, wait
+	rts
+
+; ------------------------------------------------------------------------------
+; Wait for Word RAM access or Word RAM bank 1 access
 ; ------------------------------------------------------------------------------
 
 	xdef WaitWordRam
+	xdef WaitWordRamBank1
 WaitWordRam:
-	btst	#0,MCD_MEM_MODE					; Do we have Word RAM access?
+WaitWordRamBank1:
+	bsr.s	CheckWordRam					; Do we have access?
 	beq.s	WaitWordRam					; If not, wait
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we are in Word RAM 1M/1M mode
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRam1M
+CheckWordRam1M:
+	btst	#2,MCD_MEM_MODE					; Check if we are in 1M/1M mode
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we are in Word RAM 2M mode
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRam2M
+CheckWordRam2M:
+	bsr.s	CheckWordRam1M					; Check if we are in 2M mode
+	eori	#4,sr
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -151,7 +234,7 @@ CopyPrgRamData:
 	cmpa.l	#PRG_RAM_BANK_END,a1				; Have we reached the end of the bank?
 	bls.s	.Copy						; If not, branch
 
-	addi.b	#1<<6,MCD_MEM_MODE				; Go to next bank
+	addi.b	#$40,MCD_MEM_MODE				; Go to next bank
 	lea	PRG_RAM_BANK,a1
 	bra.s	.Copy
 
@@ -166,7 +249,7 @@ CopyPrgRamData:
 	xdef InitCdDrive
 InitCdDrive:
 	move.b	#1,-(sp)					; Initialize CD drive
-	bra.s	SubCpuCommand
+	bra.w	SubCpuCommand
 
 ; ------------------------------------------------------------------------------
 ; Open CD drive
@@ -175,7 +258,7 @@ InitCdDrive:
 	xdef OpenCdDrive
 OpenCdDrive:
 	move.b	#2,-(sp)					; Open CD drive
-	bra.s	SubCpuCommand
+	bra.w	SubCpuCommand
 
 ; ------------------------------------------------------------------------------
 ; Get CD drive status
@@ -272,6 +355,22 @@ UnpauseCdda:
 	bra.s	SubCpuCommand
 
 ; ------------------------------------------------------------------------------
+; Set CDDA speed
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.w - Speed setting
+;	       0 - Normal
+;	       1 - Fast forward
+;	       2 - Fast reverse
+; ------------------------------------------------------------------------------
+
+	xdef SetCddaSpeed
+SetCddaSpeed:
+	move.w	d0,MCD_MAIN_COMM_0				; Set CDDA speed
+	move.b	#$B,-(sp)
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
 ; Seek to CDDA track
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
@@ -281,7 +380,7 @@ UnpauseCdda:
 	xdef SeekCdda
 SeekCdda:
 	move.w	d0,MCD_MAIN_COMM_0				; Seek to CDDA track
-	move.b	#$B,-(sp)
+	move.b	#$C,-(sp)
 	bra.s	SubCpuCommand
 
 ; ------------------------------------------------------------------------------
@@ -294,7 +393,34 @@ SeekCdda:
 	xdef SeekCddaTime
 SeekCddaTime:
 	move.l	d0,MCD_MAIN_COMM_0				; Seek to CDDA time
-	move.b	#$C,-(sp)
+	move.b	#$D,-(sp)
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Swap Word RAM banks
+; ------------------------------------------------------------------------------
+
+	xdef SwapWordRamBanks
+SwapWordRamBanks:
+	move.b	#$E,-(sp)					; Swap banks
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Access Word RAM bank 0
+; ------------------------------------------------------------------------------
+
+	xdef SetWordRamBank0
+SetWordRamBank0:
+	move.b	#$F,-(sp)					; Access bank 0
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Access Word RAM bank 1
+; ------------------------------------------------------------------------------
+
+	xdef SetWordRamBank1
+SetWordRamBank1:
+	move.b	#$10,-(sp)					; Access bank 1
 	bra.s	SubCpuCommand
 
 ; ------------------------------------------------------------------------------
@@ -303,7 +429,7 @@ SeekCddaTime:
 
 	xdef StartSubCpuModule
 StartSubCpuModule:
-	move.b	#$D,-(sp)					; Start module
+	move.b	#$11,-(sp)					; Start module
 
 ; ------------------------------------------------------------------------------
 ; Send command to the Sub CPU

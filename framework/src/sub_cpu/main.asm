@@ -24,7 +24,8 @@
 
 	xdef INT_Initialize, INT_UserCall3
 INT_Initialize:
-	andi.b	#%11100010,MCD_MEM_MODE				; Set Word RAM to 2M mode and disable priority
+	bsr.w	SetWordRam2M					; Set Word RAM to 2M mode
+	bsr.w	DisableWordRamPriority				; Disable Word RAM priority
 
 	lea	MCD_SUB_COMMS,a0				; Clear communication registers
 	move.b	d0,MCD_SUB_FLAG-MCD_SUB_COMMS(a0)
@@ -53,9 +54,7 @@ INT_Main:
 	tst.b	MCD_MAIN_FLAG					; Has the Main CPU acknowledged us?
 	bne.s	.WaitMainAck					; If not, wait
 
-.WaitWordRam:
-	btst	#1,MCD_MEM_MODE					; Do we have access to Word RAM?
-	beq.s	.WaitWordRam					; If not, wait
+	bsr.w	WaitWordRam					; Wait for Word RAM access
 
 	lea	INT_ProgramEnd(pc),a0				; Clear rest of Program RAM and Word RAM
 	moveq	#0,d0
@@ -101,12 +100,16 @@ INT_Main:
 	bra.w	INT_PlayAllCddaCmd				; Play all CDDA tracks
 	bra.w	INT_PlayCddaCmd					; Play CDDA track
 	bra.w	INT_LoopCddaCmd					; Loop CDDA track
-	bra.w	INT_PlayCddaTime				; Play CDDA at time
+	bra.w	INT_PlayCddaTimeCmd				; Play CDDA at time
 	bra.w	INT_StopCddaCmd					; Stop CDDA
 	bra.w	INT_PauseCddaCmd				; Pause CDDA
 	bra.w	INT_UnpauseCddaCmd				; Unpause CDDA
+	bra.w	INT_SetCddaSpeedCmd				; Set CDDA speed
 	bra.w	INT_SeekCddaCmd					; Seek to CDDA track
 	bra.w	INT_SeekCddaTimeCmd				; Seek to CDDA time
+	bra.w	INT_SwapWordRamBanksCmd				; Swap Word RAM banks
+	bra.w	INT_SetWordRamBank0Cmd				; Set Main CPU Word RAM bank 0
+	bra.w	INT_SetWordRamBank1Cmd				; Set Main CPU Word RAM bank 1
 	bra.w	INT_StartModuleCmd				; Start module
 .CommandsEnd:
 

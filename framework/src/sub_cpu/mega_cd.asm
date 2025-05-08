@@ -15,220 +15,196 @@
 ; ------------------------------------------------------------------------------
 
 	include	"mcd_sub.inc"
-
+	
 	section code
 
 ; ------------------------------------------------------------------------------
-; Handle CDDA track command
+; Check if we have access to Word RAM bank 0
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - No access/Access
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRamBank0
+CheckWordRamBank0:
+	btst	#0,MCD_MEM_MODE					; Check if we have access
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we have access to Word RAM bank 1
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - No access/Access
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRamBank1
+CheckWordRamBank1:
+	bsr.s	CheckWordRamBank0				; Check if we have access
+	eori	#4,sr
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we have access to Word RAM
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - No access/Access
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRam
+CheckWordRam:
+	btst	#1,MCD_MEM_MODE					; Check if we have access
+	rts
+
+; ------------------------------------------------------------------------------
+; Swap Word RAM banks
+; ------------------------------------------------------------------------------
+
+	xdef SwapWordRamBanks
+	xdef INT_SwapWordRamBanksCmd
+SwapWordRamBanks:
+INT_SwapWordRamBanksCmd:
+	bsr.s	CheckWordRamBank0				; Do we have access to bank 0?
+	bne.s	SetWordRamBank1					; If so, branch
+
+; ------------------------------------------------------------------------------
+; Access Word RAM bank 0
+; ------------------------------------------------------------------------------
+
+	xdef SetWordRamBank0
+	xdef INT_SetWordRamBank1Cmd
+SetWordRamBank0:
+INT_SetWordRamBank1Cmd:
+	bset	#0,MCD_MEM_MODE					; Access bank 0
+	rts
+
+; ------------------------------------------------------------------------------
+; Access Word RAM bank 1
+; ------------------------------------------------------------------------------
+
+	xdef SetWordRamBank1
+	xdef INT_SetWordRamBank0Cmd
+SetWordRamBank1:
+INT_SetWordRamBank0Cmd:
+	bclr	#0,MCD_MEM_MODE					; Access bank 1
+	rts
+
+; ------------------------------------------------------------------------------
+; Give Word RAM access to the Main CPU
+; ------------------------------------------------------------------------------
+
+	xdef GiveWordRam
+GiveWordRam:
+	bset	#0,MCD_MEM_MODE					; Give access to the Main CPU
+	beq.s	GiveWordRam					; If it hasn't been given, wait
+	rts
+
+; ------------------------------------------------------------------------------
+; Wait for Word RAM access
+; ------------------------------------------------------------------------------
+
+	xdef WaitWordRam
+WaitWordRam:
+	bsr.s	CheckWordRam					; Do we have access?
+	beq.s	WaitWordRam					; If not, wait
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we are in Word RAM 1M/1M mode
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRam1M
+CheckWordRam1M:
+	btst	#2,MCD_MEM_MODE					; Check if we are in 1M/1M mode
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we are in 2M mode
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRam2M
+CheckWordRam2M:
+	bsr.s	CheckWordRam1M					; Check if we are in 2M mode
+	eori	#4,sr
+	rts
+
+; ------------------------------------------------------------------------------
+; Set to Word RAM 1M/1M mode
+; ------------------------------------------------------------------------------
+
+	xdef SetWordRam1M
+SetWordRam1M:
+	bset	#2,MCD_MEM_MODE					; Set to 1M/1M mode
+	rts
+
+; ------------------------------------------------------------------------------
+; Set to Word RAM 2M mode
+; ------------------------------------------------------------------------------
+
+	xdef SetWordRam2M
+SetWordRam2M:
+	bclr	#2,MCD_MEM_MODE					; Set to 2M mode
+	rts
+
+; ------------------------------------------------------------------------------
+; Get Word RAM priority mode
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	d0.b - Word RAM priority mode
+;	       0 - Off
+;	       1 - Overwrite
+;	       2 - Underwrite
+; ------------------------------------------------------------------------------
+
+	xdef GetWordRamPriority
+GetWordRamPriority:
+	move.b	MCD_MEM_MODE,d0					; Get priority mode
+	lsr.b	#3,d0
+	andi.b	#3,d0
+	rts
+
+; ------------------------------------------------------------------------------
+; Disable Word RAM priority
+; ------------------------------------------------------------------------------
+
+	xdef DisableWordRamPriority
+DisableWordRamPriority:
+	andi.b	#~$18,MCD_MEM_MODE				; Disable priority
+	rts
+
+; ------------------------------------------------------------------------------
+; Set Word RAM priority to overwrite
+; ------------------------------------------------------------------------------
+
+SetWordRamOverwrite:
+	bsr.s	DisableWordRamPriority				; Set overwrite
+	ori.b	#8,MCD_MEM_MODE
+	rts
+
+; ------------------------------------------------------------------------------
+; Set Word RAM priority to underwrite
+; ------------------------------------------------------------------------------
+
+SetWordRamUnderwrite:
+	bsr.s	DisableWordRamPriority				; Set overwrite
+	ori.b	#$10,MCD_MEM_MODE
+	rts
+
+; ------------------------------------------------------------------------------
+; Basic BIOS function
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w   - Track ID
 ;	(sp).w - BIOS function ID
 ; ------------------------------------------------------------------------------
 
-HandleCddaTrack:
+	xdef BasicBiosFunction
+BasicBiosFunction:
 	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
 
-	lea	INT_bios_params.w,a0				; Set CDDA track
-	move.w	d0,(a0)
 	move.w	$14(sp),d0					; Run BIOS function
 	jsr	_CDBIOS
 
 	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
 	addq.w	#2,sp
 	rts
-
-; ------------------------------------------------------------------------------
-; Handle CDDA time command
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	d0.l   - Timecode
-;	(sp).w - BIOS function ID
-; ------------------------------------------------------------------------------
-
-HandleCddaTime:
-	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
-
-	lea	INT_bios_params.w,a0				; Set CDDA timecode
-	move.l	d0,(a0)
-	move.w	$14(sp),d0					; Run BIOS function
-	jsr	_CDBIOS
-
-	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
-	addq.w	#2,sp
-	rts
-
-; ------------------------------------------------------------------------------
-; Play all CDDA tracks
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	d0.w/$00.w - Starting track ID
-; ------------------------------------------------------------------------------
-
-	xdef INT_PlayAllCddaCmd
-INT_PlayAllCddaCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
-
-; ------------------------------------------------------------------------------
-
-	xdef PlayAllCdda
-PlayAllCdda:
-	move.w	#MSCPLAY,-(sp)					; Play all CDDA tracks
-	bra.s	HandleCddaTrack
-
-; ------------------------------------------------------------------------------
-; Play CDDA track
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	$00.w - Track ID
-; ------------------------------------------------------------------------------
-
-	xdef INT_PlayCddaCmd
-INT_PlayCddaCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
-
-; ------------------------------------------------------------------------------
-
-	xdef PlayCdda
-PlayCdda:
-	move.w	#MSCPLAY1,-(sp)					; Play CDDA track
-	bra.s	HandleCddaTrack
-
-; ------------------------------------------------------------------------------
-; Loop CDDA track
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	$00.w - Track ID
-; ------------------------------------------------------------------------------
-
-	xdef INT_LoopCddaCmd
-INT_LoopCddaCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
-
-; ------------------------------------------------------------------------------
-
-	xdef LoopCdda
-LoopCdda:
-	move.w	#MSCPLAYR,-(sp)					; Loop CDDA track
-	bra.s	HandleCddaTrack
-
-; ------------------------------------------------------------------------------
-; Play CDDA at time
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	$00.l - Timecode
-; ------------------------------------------------------------------------------
-
-	xdef INT_PlayCddaTimeCmd
-INT_PlayCddaTimeCmd:
-	move.l	MCD_MAIN_COMM_0,d0				; Get timecode
-
-; ------------------------------------------------------------------------------
-
-	xdef PlayCddaTime
-PlayCddaTime:
-	move.w	#MSCPLAYT,-(sp)					; Play CDDA at time
-	bra.s	HandleCddaTime
-
-; ------------------------------------------------------------------------------
-; Stop CDDA
-; ------------------------------------------------------------------------------
-
-	xdef StopCdda
-	xdef INT_StopCddaCmd
-StopCdda:
-INT_StopCddaCmd:
-	move.w	#MSCSTOP,-(sp)					; Stop CDDA
-	bra.w	BasicBiosFunction
-
-; ------------------------------------------------------------------------------
-; Pause CDDA
-; ------------------------------------------------------------------------------
-
-	xdef PauseCdda
-	xdef INT_PauseCddaCmd
-PauseCdda:
-INT_PauseCddaCmd:
-	move.w	#MSCPAUSEON,-(sp)				; Pause CDDA
-	bra.w	BasicBiosFunction
-
-; ------------------------------------------------------------------------------
-; Unpause CDDA
-; ------------------------------------------------------------------------------
-
-	xdef UnpauseCdda
-	xdef INT_UnpauseCddaCmd
-UnpauseCdda:
-INT_UnpauseCddaCmd:
-	move.w	#MSCPAUSEOFF,-(sp)				; Unpause CDDA
-	bra.w	BasicBiosFunction
-
-; ------------------------------------------------------------------------------
-; Set CDDA speed
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	$00.w - Speed setting
-;	        0 - Normal
-;	        1 - Fast forward
-;	        2 - Fast reverse
-; ------------------------------------------------------------------------------
-
-	xdef INT_SetCddaSpeedCmd
-INT_SetCddaSpeedCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get speed setting
-
-; ------------------------------------------------------------------------------
-
-	xdef SetCddaSpeed
-SetCddaSpeed:
-	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
-
-	add.w	d0,d0						; Set CDDA speed
-	move.w	.FunctionIds(pc,d0.w),d0
-	jsr	_CDBIOS
-
-	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
-	rts
-
-; ------------------------------------------------------------------------------
-
-.FunctionIds:
-	dc.w	MSCSCANOFF, MSCSCANFF, MSCSCANFR
-
-; ------------------------------------------------------------------------------
-; Seek to CDDA track
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	$00.w - Track ID
-; ------------------------------------------------------------------------------
-
-	xdef INT_SeekCddaCmd
-INT_SeekCddaCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
-
-; ------------------------------------------------------------------------------
-
-	xdef SeekCdda
-SeekCdda:
-	move.w	#MSCSEEK,-(sp)					; Seek to CDDA track
-	bra.w	HandleCddaTrack
-
-; ------------------------------------------------------------------------------
-; Seek to CDDA time
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	$00.l - Timecode
-; ------------------------------------------------------------------------------
-
-	xdef INT_SeekCddaTimeCmd
-INT_SeekCddaTimeCmd:
-	move.l	MCD_MAIN_COMM_0,d0				; Get timecode
-
-; ------------------------------------------------------------------------------
-
-	xdef SeekCddaTime
-SeekCddaTime:
-	move.w	#MSCSEEKT,-(sp)					; Seek to CDDA time
-	bra.w	HandleCddaTime
 
 ; ------------------------------------------------------------------------------
