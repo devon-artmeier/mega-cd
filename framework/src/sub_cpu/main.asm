@@ -26,16 +26,6 @@
 INT_Initialize:
 	andi.b	#%11100010,MCD_MEM_MODE				; Set Word RAM to 2M mode and disable priority
 
-	lea	INT_ProgramEnd(pc),a0				; Clear rest of Program RAM and Word RAM
-	moveq	#0,d0
-	move.w	#INT_PRG_RAM_CLEAR+(WORD_RAM_2M_SIZE/$20)-1,d1
-
-.ClearPrgRam:
-	rept $20/4
-		move.l	d0,(a0)+
-	endr
-	dbf	d1,.ClearPrgRam
-
 	lea	MCD_SUB_COMMS,a0				; Clear communication registers
 	move.b	d0,MCD_SUB_FLAG-MCD_SUB_COMMS(a0)
 	move.l	d0,(a0)+
@@ -52,21 +42,30 @@ INT_UserCall3:
 
 	xdef INT_Main
 INT_Main:
-.GiveWordRam:
-	bset	#0,MCD_MEM_MODE					; Give Word RAM access to the Main CPU
-	beq.s	.GiveWordRam					; Wait until it's given
-
 	move.b	#"I",MCD_SUB_FLAG				; Mark as initialized
 
 .WaitMainInit:
 	cmpi.b	#"I",MCD_MAIN_FLAG				; Has the Main CPU initialized?
 	bne.s	.WaitMainInit					; If not, wait
-
 	clr.b	MCD_SUB_FLAG					; Acknowledge Main CPU
 
 .WaitMainAck:
 	tst.b	MCD_MAIN_FLAG					; Has the Main CPU acknowledged us?
 	bne.s	.WaitMainAck					; If not, wait
+
+.WaitWordRam:
+	btst	#1,MCD_MEM_MODE					; Do we have access to Word RAM?
+	beq.s	.WaitWordRam					; If not, wait
+
+	lea	INT_ProgramEnd(pc),a0				; Clear rest of Program RAM and Word RAM
+	moveq	#0,d0
+	move.w	#INT_PRG_RAM_CLEAR+(WORD_RAM_2M_SIZE/$20)-1,d1
+
+.ClearPrgRam:
+	rept $20/4
+		move.l	d0,(a0)+
+	endr
+	dbf	d1,.ClearPrgRam
 
 ; ------------------------------------------------------------------------------
 
@@ -76,7 +75,6 @@ INT_Main:
 .WaitCommand:
 	move.b	MCD_MAIN_FLAG,d0				; Has a command been sent?
 	beq.s	.WaitCommand					; If not, wait
-
 	move.b	#"C",MCD_SUB_FLAG				; Acknowledge command
 
 .WaitMainCmdAck:
@@ -100,7 +98,7 @@ INT_Main:
 	bra.w	INT_InitCdDriveCmd				; Initialize CD drive
 	bra.w	INT_OpenCdDriveCmd				; Open CD drive
 	bra.w	INT_GetCdDriveStatusCmd				; Get CD drive status
-	bra.w	INT_PlayCddaAllCmd				; Play all CDDA tracks
+	bra.w	INT_PlayAllCddaCmd				; Play all CDDA tracks
 	bra.w	INT_PlayCddaCmd					; Play CDDA track
 	bra.w	INT_LoopCddaCmd					; Loop CDDA track
 	bra.w	INT_PlayCddaTime				; Play CDDA at time

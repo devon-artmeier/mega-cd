@@ -117,21 +117,16 @@ HardReset:
 	lsr.l	#1,d1
 	move.l	d1,d2
 
-	lsr.l	#3,d1						; Get number of blocks
+	lsr.l	#4,d1						; Get number of blocks
 	subq.w	#1,d1
 
 .ChecksumBlock:
-	add.w	(a1)+,d0					; Calculate checksum
-	add.w	(a1)+,d0
-	add.w	(a1)+,d0
-	add.w	(a1)+,d0
-	add.w	(a1)+,d0
-	add.w	(a1)+,d0
-	add.w	(a1)+,d0
-	add.w	(a1)+,d0
+	rept $10						; Calculate checksum
+		add.w	(a1)+,d0
+	endr
 	dbf	d1,.ChecksumBlock				; Loop until finished
 
-	andi.w	#7,d2						; Get number of leftover words
+	andi.w	#$F,d2						; Get number of leftover words
 	subq.w	#1,d2
 	bmi.s	.CheckChecksum					; If there are none left, branch
 

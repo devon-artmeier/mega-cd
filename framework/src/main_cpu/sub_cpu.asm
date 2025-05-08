@@ -19,11 +19,23 @@
 	section code
 
 ; ------------------------------------------------------------------------------
+; Check if the Sub CPU's IRQ2 is enabled
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	eq/ne - Disabled/Enabled
+; ------------------------------------------------------------------------------
+
+	xdef CheckSubCpuIrq2
+CheckSubCpuIrq2:
+	btst	#7,MCD_IRQ2					; Check if IRQ2 is enabled
+	rts
+
+; ------------------------------------------------------------------------------
 ; Trigger Sub CPU IRQ2
 ; ------------------------------------------------------------------------------
 
-	xdef TrigerSubCpuIrq2
-TrigerSubCpuIrq2:
+	xdef TriggerSubCpuIrq2
+TriggerSubCpuIrq2:
 	bset	#0,MCD_IRQ2					; Trigger IRQ2
 	rts
 	
@@ -34,7 +46,7 @@ TrigerSubCpuIrq2:
 	xdef HoldSubCpuReset
 HoldSubCpuReset:
 	bclr	#0,MCD_SUB_CTRL					; Hold reset
-	bne.s	HoldSubCpuReset
+	bne.s	HoldSubCpuReset					; If it hasn't been held, wait
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -44,7 +56,7 @@ HoldSubCpuReset:
 	xdef ReleaseSubCpuReset
 ReleaseSubCpuReset:
 	bset	#0,MCD_SUB_CTRL					; Release reset
-	beq.s	ReleaseSubCpuReset
+	beq.s	ReleaseSubCpuReset				; If it hasn't been released, wait
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -54,7 +66,7 @@ ReleaseSubCpuReset:
 	xdef RequestSubCpuBus
 RequestSubCpuBus:
 	bset	#1,MCD_SUB_CTRL					; Request bus access
-	beq.s	RequestSubCpuBus
+	beq.s	RequestSubCpuBus				; If it hasn't been given, wait
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -64,7 +76,39 @@ RequestSubCpuBus:
 	xdef ReleaseSubCpuBus
 ReleaseSubCpuBus:
 	bclr	#1,MCD_SUB_CTRL					; Release bus
-	bne.s	ReleaseSubCpuBus
+	bne.s	ReleaseSubCpuBus				; If it hasn't been released, wait
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if we have access to Word RAM
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	eq/ne - No access/Access
+; ------------------------------------------------------------------------------
+
+	xdef CheckWordRam
+CheckWordRam:
+	btst	#0,MCD_MEM_MODE					; Check if we have access
+	rts
+
+; ------------------------------------------------------------------------------
+; Give Word RAM access to the Sub CPU
+; ------------------------------------------------------------------------------
+
+	xdef GiveWordRam
+GiveWordRam:
+	bset	#1,MCD_MEM_MODE					; Give Word RAM access to the Sub CPU
+	beq.s	GiveWordRam					; If it hasn't been given, wait
+	rts
+
+; ------------------------------------------------------------------------------
+; Wait for Word RAM access
+; ------------------------------------------------------------------------------
+
+	xdef WaitWordRam
+WaitWordRam:
+	btst	#0,MCD_MEM_MODE					; Do we have Word RAM access?
+	beq.s	WaitWordRam					; If not, wait
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -94,7 +138,7 @@ CopyPrgRamData:
 	
 	lea	PRG_RAM_BANK,a1					; Get initial copy destination
 	move.l	d1,d2
-	andi.l	#$1FFFF,d2
+	andi.l	#PRG_RAM_BANK_SIZE-1,d2
 	adda.l	d2,a1
 	
 	add.l	d0,d1						; Advance Program RAM offset
@@ -116,25 +160,175 @@ CopyPrgRamData:
 	rts
 
 ; ------------------------------------------------------------------------------
+; Initialize CD drive
+; ------------------------------------------------------------------------------
+
+	xdef InitCdDrive
+InitCdDrive:
+	move.b	#1,-(sp)					; Initialize CD drive
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Open CD drive
+; ------------------------------------------------------------------------------
+
+	xdef OpenCdDrive
+OpenCdDrive:
+	move.b	#2,-(sp)					; Open CD drive
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Get CD drive status
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	d0.w - CD drive status
+; ------------------------------------------------------------------------------
+
+	xdef GetCdDriveStatus
+GetCdDriveStatus:
+	move.b	#3,-(sp)					; Get CD drive status
+	bsr.w	SubCpuCommand2
+	addq.w	#2,sp
+	move.w	MCD_SUB_COMM_0,d0
+	rts
+
+; ------------------------------------------------------------------------------
+; Play all CDDA tracks
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.w - Starting track ID
+; ------------------------------------------------------------------------------
+
+	xdef PlayAllCdda
+PlayAllCdda:
+	move.w	d0,MCD_MAIN_COMM_0				; Play all CDDA tracks
+	move.b	#4,-(sp)
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Play CDDA track
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.w - Track ID
+; ------------------------------------------------------------------------------
+
+	xdef PlayCdda
+PlayCdda:
+	move.w	d0,MCD_MAIN_COMM_0				; Play CDDA track
+	move.b	#5,-(sp)
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Loop CDDA track
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.w - Track ID
+; ------------------------------------------------------------------------------
+
+	xdef LoopCdda
+LoopCdda:
+	move.w	d0,MCD_MAIN_COMM_0				; Loop CDDA track
+	move.b	#6,-(sp)
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Play CDDA at time
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.l - Timecode
+; ------------------------------------------------------------------------------
+
+	xdef PlayCddaTime
+PlayCddaTime:
+	move.l	d0,MCD_MAIN_COMM_0				; Play CDDA at time
+	move.b	#7,-(sp)
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Stop CDDA
+; ------------------------------------------------------------------------------
+
+	xdef StopCdda
+StopCdda:
+	move.b	#8,-(sp)					; Stop CDDA
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Pause CDDA
+; ------------------------------------------------------------------------------
+
+	xdef PauseCdda
+PauseCdda:
+	move.b	#9,-(sp)					; Pause CDDA
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Unpause CDDA
+; ------------------------------------------------------------------------------
+
+	xdef UnpauseCdda
+UnpauseCdda:
+	move.b	#$A,-(sp)					; Unpause CDDA
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Seek to CDDA track
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.w - Track ID
+; ------------------------------------------------------------------------------
+
+	xdef SeekCdda
+SeekCdda:
+	move.w	d0,MCD_MAIN_COMM_0				; Seek to CDDA track
+	move.b	#$B,-(sp)
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Seek to CDDA time
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.l - Timecode
+; ------------------------------------------------------------------------------
+
+	xdef SeekCddaTime
+SeekCddaTime:
+	move.l	d0,MCD_MAIN_COMM_0				; Seek to CDDA time
+	move.b	#$C,-(sp)
+	bra.s	SubCpuCommand
+
+; ------------------------------------------------------------------------------
+; Start Sub CPU module
+; ------------------------------------------------------------------------------
+
+	xdef StartSubCpuModule
+StartSubCpuModule:
+	move.b	#$D,-(sp)					; Start module
+
+; ------------------------------------------------------------------------------
 ; Send command to the Sub CPU
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.b - Command ID
+;	(sp).b - Command ID
 ; ------------------------------------------------------------------------------
 
-	xdef SubCpuCommand
 SubCpuCommand:
-	move.b	d0,MCD_MAIN_FLAG				; Set command ID
+	move.b	(sp)+,MCD_MAIN_FLAG				; Set command ID
 
-.WaitSubAck:
+WaitSubCpuCmd:
 	cmpi.b	#"C",MCD_SUB_FLAG				; Has the Sub CPU acknowledged it?
-	bne.s	.WaitSubAck					; If not, wait
-
+	bne.s	WaitSubCpuCmd					; If not, wait
 	clr.b	MCD_MAIN_FLAG					; Reset command ID
 
 .WaitSubFinish:
 	tst.b	MCD_SUB_FLAG					; Has the Sub CPU finished?
 	bne.s	.WaitSubFinish					; If not, wait
 	rts
+
+; ------------------------------------------------------------------------------
+
+SubCpuCommand2:
+	move.b	4(sp),MCD_MAIN_FLAG				; Set command ID
+	bra.s	WaitSubCpuCmd					; Process command
 
 ; ------------------------------------------------------------------------------

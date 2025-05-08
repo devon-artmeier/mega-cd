@@ -25,8 +25,8 @@
 ;	$00.w - Starting track ID
 ; ------------------------------------------------------------------------------
 
-	xdef INT_PlayCddaAllCmd
-INT_PlayCddaAllCmd:
+	xdef INT_PlayAllCddaCmd
+INT_PlayAllCddaCmd:
 	lea	INT_bios_params.w,a0				; Play all CDDA tracks
 	move.w	MCD_MAIN_COMM_0,(a0)
 	moveq	#MSCPLAY,d0

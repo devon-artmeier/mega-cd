@@ -36,10 +36,10 @@ ModuleHeader:
 ; ------------------------------------------------------------------------------
 
 ModuleStart:
-	dc.l	INT_Initialize-ModuleStart			; Initialization
-	dc.l	INT_Main-ModuleStart				; Main
-	dc.l	INT_MegaDriveIrq-ModuleStart			; Mega Drive interrupt
-	dc.l	INT_UserCall3-ModuleStart			; User call 3
+	dc.w	INT_Initialize-ModuleStart			; Initialization
+	dc.w	INT_Main-ModuleStart				; Main
+	dc.w	INT_MegaDriveIrq-ModuleStart			; Mega Drive interrupt
+	dc.w	INT_UserCall3-ModuleStart			; User call 3
 	dc.w	0
 
 ; ------------------------------------------------------------------------------

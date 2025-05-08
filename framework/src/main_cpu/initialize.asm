@@ -24,7 +24,7 @@
 
 	xdef WaitSubCpuInit
 WaitSubCpuInit:
-	move.l	d0,-(sp)					; Save registers
+	movem.l	d0/a0,-(sp)					; Save registers
 
 	lea	MCD_MAIN_COMMS,a0				; Clear communication registers
 	moveq	#0,d0
@@ -35,18 +35,24 @@ WaitSubCpuInit:
 	move.l	d0,(a0)+
 
 .WaitSubInit:
+	if USE_MCD_MODE_1<>0
+		bsr.w	TriggerSubCpuIrq2			; Trigger IRQ2
+		move.w	#$3000-1,d0				; Delay for a while
+		dbf	d0,*
+	endif
+
 	cmpi.b	#"I",MCD_SUB_FLAG				; Has the Sub CPU initialized?
 	bne.s	.WaitSubInit					; If not, wait
-
 	move.b	#"I",MCD_MAIN_FLAG				; Mark as initialized
 
 .WaitSubAck:
 	tst.b	MCD_SUB_FLAG					; Has the Sub CPU acknowledged us?
 	bne.s	.WaitSubAck					; If not, wait
-
 	clr.b	MCD_MAIN_FLAG					; Reset command ID
 	
-	move.l	(sp)+,d0					; Restore registers
+	bsr.w	GiveWordRam					; Wait for Word RAM access
+
+	movem.l	(sp)+,d0/a0					; Restore registers
 	rts
 
 ; ------------------------------------------------------------------------------

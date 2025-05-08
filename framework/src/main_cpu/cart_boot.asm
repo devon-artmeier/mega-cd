@@ -59,11 +59,12 @@ InitSubCpu:
 	bsr.w	HoldSubCpuReset					; Hold Sub CPU reset
 	bsr.w	RequestSubCpuBus				; Request Sub CPU bus access
 	
-	move.b	#0,MCD_PROTECT					; Disable write protection
+	move.b	#0,MCD_PROTECT					; Disable Program RAM write protection
+	andi.b	#$3F,MCD_MEM_MODE				; Set to Program RAM bank 0
 	
 	lea	PRG_RAM_BANK,a2					; Decompress Sub CPU BIOS
 	jsr	DecompKosinski
-	
+
 	move.l	#$6000,d1					; Load Sub CPU program
 	bsr.w	CopyPrgRamData
 	
@@ -71,6 +72,8 @@ InitSubCpu:
 
 	bsr.w	ReleaseSubCpuReset				; Release Sub CPU reset
 	bsr.w	ReleaseSubCpuBus				; Release Sub CPU bus
+
+	bsr.w	WaitSubCpuInit					; Wait for the Sub CPU to initialize
 
 	movem.l (sp)+,d0-d1/a0-a2				; Success
 	ori	#4,ccr
@@ -128,10 +131,10 @@ FindBios:
 ; ------------------------------------------------------------------------------
 
 .Signatures:
-	dc.w	.Sega15800-*+2
-	dc.w	.Sega16000-*+2
-	dc.w	.Sega1AD00-*+2
-	dc.w	.Wonder16000-*+2
+	dc.w	.Sega15800-(*+2)
+	dc.w	.Sega16000-(*+2)
+	dc.w	.Sega1AD00-(*+2)
+	dc.w	.Wonder16000-(*+2)
 	dc.w	0
 	
 .Sega15800:
