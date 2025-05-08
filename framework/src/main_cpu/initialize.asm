@@ -19,25 +19,34 @@
 	section code
 
 ; ------------------------------------------------------------------------------
-; Send command to the Sub CPU
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	d0.b - Command ID
+; Wait for the Sub CPU program to initialize
 ; ------------------------------------------------------------------------------
 
-	xdef SubCpuCommand
-SubCpuCommand:
-	move.b	d0,MCD_MAIN_FLAG				; Set command ID
+	xdef WaitSubCpuInit
+WaitSubCpuInit:
+	move.l	d0,-(sp)					; Save registers
+
+	lea	MCD_MAIN_COMMS,a0				; Clear communication registers
+	moveq	#0,d0
+	move.b	d0,MCD_MAIN_FLAG-MCD_MAIN_COMMS(a0)
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+
+.WaitSubInit:
+	cmpi.b	#"I",MCD_SUB_FLAG				; Has the Sub CPU initialized?
+	bne.s	.WaitSubInit					; If not, wait
+
+	move.b	#"I",MCD_MAIN_FLAG				; Mark as initialized
 
 .WaitSubAck:
-	cmpi.b	#"C",MCD_SUB_FLAG				; Has the Sub CPU acknowledged it?
+	tst.b	MCD_SUB_FLAG					; Has the Sub CPU acknowledged us?
 	bne.s	.WaitSubAck					; If not, wait
 
 	clr.b	MCD_MAIN_FLAG					; Reset command ID
-
-.WaitSubFinish:
-	tst.b	MCD_SUB_FLAG					; Has the Sub CPU finished?
-	bne.s	.WaitSubFinish					; If not, wait
+	
+	move.l	(sp)+,d0					; Restore registers
 	rts
 
 ; ------------------------------------------------------------------------------

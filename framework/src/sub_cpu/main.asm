@@ -38,9 +38,10 @@ INT_Initialize:
 
 	lea	MCD_SUB_COMMS,a0				; Clear communication registers
 	move.b	d0,MCD_SUB_FLAG-MCD_SUB_COMMS(a0)
-	rept $10/4
-		move.l	d0,(a0)+
-	endr
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
 
 INT_UserCall3:
 	rts

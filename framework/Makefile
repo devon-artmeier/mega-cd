@@ -36,7 +36,7 @@ EXPORT_MSG            = @echo Exporting  $@
 # Main CPU functions files
 # ------------------------------------------------------------------------------
 
-SRC_PATH_MAIN        := $(SRC_PATH)/main
+SRC_PATH_MAIN        := $(SRC_PATH)/main_cpu
 BUILD_PATH_MAIN      := $(subst $(SRC_PATH),$(BUILD_PATH),$(SRC_PATH_MAIN))
 BUILD_PATH_MAIN_CART := $(BUILD_PATH_MAIN)/cart
 BUILD_PATH_MAIN_CD   := $(BUILD_PATH_MAIN)/cd
@@ -61,7 +61,7 @@ LINKER_MAIN          := linker_main.link
 # Sub CPU program files
 # ------------------------------------------------------------------------------
 
-SRC_PATH_SUB         := $(SRC_PATH)/sub
+SRC_PATH_SUB         := $(SRC_PATH)/sub_cpu
 BUILD_PATH_SUB       := $(subst $(SRC_PATH),$(BUILD_PATH),$(SRC_PATH_SUB))
 
 SRC_SUB              := $(wildcard $(SRC_PATH_SUB)/*.asm)
