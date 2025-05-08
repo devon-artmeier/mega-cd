@@ -1,0 +1,24 @@
+MEMORY {
+	ram: org=0x6000, len=0xA000
+}
+
+SECTIONS {
+	code: {
+		INT_ProgramStart = .;
+		*(header);
+		. = ALIGN(2);
+		*(code_main);
+		. = ALIGN(2);
+		*(code);
+		. = ALIGN(2);
+		*(data);
+		. = ALIGN(0x20);
+		INT_ProgramEnd    = .;
+		INT_PROGRAM_SIZE  = .-INT_ProgramStart;
+		INT_PRG_RAM_CLEAR = (0x80000-INT_PROGRAM_SIZE)/0x20;
+	} > ram
+
+	bss (NOLOAD): {
+		*(bss);
+	} > ram
+}

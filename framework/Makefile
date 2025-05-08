@@ -21,7 +21,7 @@ DUMPASMSYM           := dumpasmsym
 VASM_FLAGS           := -Fvobj -I$(INCLUDE_PATH) -quiet -ldots -spaces
 VLINK_FLAGS          := -b rawbin -symctrl=4
 MKASMDEP_FLAGS       := -r -i $(INCLUDE_PATH)
-DUMPASMSYM_FLAGS     := -m asm
+DUMPASMSYM_FLAGS     := -m asm -xp INT_
 
 # ------------------------------------------------------------------------------
 # Messages
@@ -33,7 +33,7 @@ LINK_MSG              = @echo Linking    $@
 EXPORT_MSG            = @echo Exporting  $@
 
 # ------------------------------------------------------------------------------
-# Main CPU module files
+# Main CPU functions files
 # ------------------------------------------------------------------------------
 
 SRC_PATH_MAIN        := $(SRC_PATH)/main
@@ -55,8 +55,10 @@ OUT_MAIN_CD          := $(OUT_PATH)/mcd_framework_main_cd.bin
 SYM_MAIN_CD          := $(patsubst $(OUT_PATH)/%.bin,$(BUILD_PATH)/%.sym,$(OUT_MAIN_CD))
 EXPORT_MAIN_CD       := $(patsubst %.bin,%.inc,$(OUT_MAIN_CD))
 
+LINKER_MAIN          := linker_main.link
+
 # ------------------------------------------------------------------------------
-# Sub CPU module files
+# Sub CPU program files
 # ------------------------------------------------------------------------------
 
 SRC_PATH_SUB         := $(SRC_PATH)/sub
@@ -69,6 +71,8 @@ DEPEND_SUB           := $(patsubst %.o,%.d,$(OBJ_SUB))
 OUT_SUB              := $(OUT_PATH)/mcd_framework_sub.bin
 SYM_SUB              := $(patsubst $(OUT_PATH)/%.bin,$(BUILD_PATH)/%.sym,$(OUT_SUB))
 EXPORT_SUB           := $(patsubst %.bin,%.inc,$(OUT_SUB))
+
+LINKER_SUB           := linker_sub.link
 
 # ------------------------------------------------------------------------------
 # Reserved rules
@@ -92,7 +96,7 @@ ifneq ($(OUT_PATH_EXISTS),)
 endif
 
 # ------------------------------------------------------------------------------
-# Main CPU (cartridge) module rules
+# Main CPU (cartridge) functions rules
 # ------------------------------------------------------------------------------
 
 $(EXPORT_MAIN_CART): $(SYM_MAIN_CART) | $(OUT_PATH) $(OUT_MAIN_CART)
@@ -101,7 +105,7 @@ $(EXPORT_MAIN_CART): $(SYM_MAIN_CART) | $(OUT_PATH) $(OUT_MAIN_CART)
 	
 $(OUT_MAIN_CART): $(OBJ_MAIN_CART) | $(OUT_PATH)
 	$(LINK_MSG)
-	@$(VLINK) $(VLINK_FLAGS) -symfile $(SYM_MAIN_CART) -o $@ $^
+	@$(VLINK) $(VLINK_FLAGS) -T $(LINKER_MAIN) -symfile $(SYM_MAIN_CART) -o $@ $^
 
 $(OBJ_MAIN_CART): $(BUILD_PATH_MAIN_CART)/%.o: $(SRC_PATH_MAIN)/%.asm | $(DEPEND_MAIN_CART)
 	$(ASSEMBLE_MSG)
@@ -112,7 +116,7 @@ $(DEPEND_MAIN_CART): $(BUILD_PATH_MAIN_CART)/%.d: $(SRC_PATH_MAIN)/%.asm | $(BUI
 	@$(MKASMDEP) $(MKASMDEP_FLAGS) -o $@ $(patsubst %.d,%.o,$@) $<
 
 # ------------------------------------------------------------------------------
-# Main CPU (CD) module rules
+# Main CPU (CD) functions rules
 # ------------------------------------------------------------------------------
 
 $(EXPORT_MAIN_CD): $(SYM_MAIN_CD) | $(OUT_PATH) $(OUT_MAIN_CD)
@@ -121,7 +125,7 @@ $(EXPORT_MAIN_CD): $(SYM_MAIN_CD) | $(OUT_PATH) $(OUT_MAIN_CD)
 	
 $(OUT_MAIN_CD): $(OBJ_MAIN_CD) | $(OUT_PATH)
 	$(LINK_MSG)
-	@$(VLINK) $(VLINK_FLAGS) -symfile $(SYM_MAIN_CD) -o $@ $^
+	@$(VLINK) $(VLINK_FLAGS) -T $(LINKER_MAIN) -symfile $(SYM_MAIN_CD) -o $@ $^
 
 $(OBJ_MAIN_CD): $(BUILD_PATH_MAIN_CD)/%.o: $(SRC_PATH_MAIN)/%.asm | $(DEPEND_MAIN_CD)
 	$(ASSEMBLE_MSG)
@@ -132,7 +136,7 @@ $(DEPEND_MAIN_CD): $(BUILD_PATH_MAIN_CD)/%.d: $(SRC_PATH_MAIN)/%.asm | $(BUILD_P
 	@$(MKASMDEP) $(MKASMDEP_FLAGS) -o $@ $(patsubst %.d,%.o,$@) $<
 
 # ------------------------------------------------------------------------------
-# Sub CPU module rules
+# Sub CPU program rules
 # ------------------------------------------------------------------------------
 
 $(EXPORT_SUB): $(SYM_SUB) | $(OUT_PATH) $(OUT_SUB)
@@ -141,7 +145,7 @@ $(EXPORT_SUB): $(SYM_SUB) | $(OUT_PATH) $(OUT_SUB)
 
 $(OUT_SUB): $(OBJ_SUB) | $(OUT_PATH)
 	$(LINK_MSG)
-	@$(VLINK) $(VLINK_FLAGS) -symfile $(SYM_SUB) -o $@ $^
+	@$(VLINK) $(VLINK_FLAGS) -T $(LINKER_SUB) -symfile $(SYM_SUB) -o $@ $^
 
 $(OBJ_SUB): $(BUILD_PATH)/%.o: $(SRC_PATH)/%.asm | $(DEPEND_SUB)
 	$(ASSEMBLE_MSG)

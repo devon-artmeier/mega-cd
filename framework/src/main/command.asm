@@ -14,6 +14,30 @@
 ; PERFORMANCE OF THIS SOFTWARE.
 ; ------------------------------------------------------------------------------
 
-	include	"mcd_sub.inc"
+	include	"mcd_main.inc"
+	
+	section code
+
+; ------------------------------------------------------------------------------
+; Send command to the Sub CPU
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Command ID
+; ------------------------------------------------------------------------------
+
+	xdef SubCpuCommand
+SubCpuCommand:
+	move.b	d0,MCD_MAIN_FLAG				; Set command ID
+
+.WaitSubAck:
+	cmpi.b	#"C",MCD_SUB_FLAG				; Has the Sub CPU acknowledged it?
+	bne.s	.WaitSubAck					; If not, wait
+
+	clr.b	MCD_MAIN_FLAG					; Reset command ID
+
+.WaitSubFinish:
+	tst.b	MCD_SUB_FLAG					; Has the Sub CPU finished?
+	bne.s	.WaitSubFinish					; If not, wait
+	rts
 
 ; ------------------------------------------------------------------------------

@@ -1,0 +1,12 @@
+MEMORY {
+	prg: org=0, len=0x7A00
+}
+
+SECTIONS {
+	code: {
+		*(code);
+		. = ALIGN(2);
+		*(data);
+		MCD_FUNCTIONS_SIZE = ALIGN(0x10);
+	} > prg
+}
