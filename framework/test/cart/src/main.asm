@@ -25,6 +25,15 @@
 	xdef Main
 Main:
 	vdpCmd move.l,0,CRAM,WRITE,VDP_CTRL
+	move.w	#$E0E,VDP_DATA
+
+	bsr.w	InitCdDrive+McdLib
+	bsr.w	WaitCdDriveReady+McdLib
+
+	moveq	#2,d0
+	bsr.w	LoopCdda+McdLib
+
+	vdpCmd move.l,0,CRAM,WRITE,VDP_CTRL
 	move.w	#$E0,VDP_DATA
 	bra.w	*
 

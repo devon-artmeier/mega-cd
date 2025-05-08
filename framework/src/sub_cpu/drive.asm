@@ -22,34 +22,49 @@
 ; Initialize CD drive
 ; ------------------------------------------------------------------------------
 
+	xdef InitCdDrive
 	xdef INT_InitCdDriveCmd
+InitCdDrive:
 INT_InitCdDriveCmd:
-	lea	INT_bios_params.w,a0				; Initialize CD drive
-	move.w	#(1<<8)|$FF,(a0)
-	moveq	#DRVINIT,d0
-	jmp	_CDBIOS
+	move.w	#(1<<8)|$FF,d0					; Initialize CD drive
+	move.w	#DRVINIT,-(sp)
+	bra.w	BasicBiosFunctionW
 
 ; ------------------------------------------------------------------------------
 ; Open CD drive
 ; ------------------------------------------------------------------------------
 
+	xdef OpenCdDrive
 	xdef INT_OpenCdDriveCmd
+OpenCdDrive:
 INT_OpenCdDriveCmd:
-	moveq	#DRVOPEN,d0					; Open CD drive
-	jmp	_CDBIOS
+	move.w	#DRVOPEN,-(sp)					; Open CD drive
+	bra.w	BasicBiosFunction
 
 ; ------------------------------------------------------------------------------
 ; Get CD drive status
 ; ------------------------------------------------------------------------------
 ; RETURNS:
-;	$00.w - CD drive status
+;	d0.w - CD drive status
 ; ------------------------------------------------------------------------------
 
 	xdef INT_GetCdDriveStatusCmd
 INT_GetCdDriveStatusCmd:
+	bsr.s	GetCdDriveStatus				; Get CD drive status
+	move.w	d0,MCD_SUB_COMM_0
+	rts
+
+; ------------------------------------------------------------------------------
+
+	xdef GetCdDriveStatus
+GetCdDriveStatus:
+	movem.l d1/a0-a1,-(sp)					; Save registers
+
 	move.w	#CDBSTAT,d0					; Get CD drive status
 	jsr	_CDBIOS
-	move.w	(a0),MCD_SUB_COMM_0
+	move.w	(a0),d0
+	
+	movem.l	(sp)+,d1/a0-a1					; Restore registers
 	rts
 
 ; ------------------------------------------------------------------------------

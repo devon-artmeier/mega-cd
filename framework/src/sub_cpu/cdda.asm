@@ -19,46 +19,6 @@
 	section code
 
 ; ------------------------------------------------------------------------------
-; Handle CDDA track command
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	d0.w   - Track ID
-;	(sp).w - BIOS function ID
-; ------------------------------------------------------------------------------
-
-HandleCddaTrack:
-	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
-
-	lea	INT_bios_params.w,a0				; Set CDDA track
-	move.w	d0,(a0)
-	move.w	$14(sp),d0					; Run BIOS function
-	jsr	_CDBIOS
-
-	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
-	addq.w	#2,sp
-	rts
-
-; ------------------------------------------------------------------------------
-; Handle CDDA time command
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	d0.l   - Timecode
-;	(sp).w - BIOS function ID
-; ------------------------------------------------------------------------------
-
-HandleCddaTime:
-	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
-
-	lea	INT_bios_params.w,a0				; Set CDDA timecode
-	move.l	d0,(a0)
-	move.w	$14(sp),d0					; Run BIOS function
-	jsr	_CDBIOS
-
-	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
-	addq.w	#2,sp
-	rts
-
-; ------------------------------------------------------------------------------
 ; Play all CDDA tracks
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
@@ -74,7 +34,7 @@ INT_PlayAllCddaCmd:
 	xdef PlayAllCdda
 PlayAllCdda:
 	move.w	#MSCPLAY,-(sp)					; Play all CDDA tracks
-	bra.s	HandleCddaTrack
+	bra.w	BasicBiosFunctionW
 
 ; ------------------------------------------------------------------------------
 ; Play CDDA track
@@ -92,7 +52,7 @@ INT_PlayCddaCmd:
 	xdef PlayCdda
 PlayCdda:
 	move.w	#MSCPLAY1,-(sp)					; Play CDDA track
-	bra.s	HandleCddaTrack
+	bra.w	BasicBiosFunctionW
 
 ; ------------------------------------------------------------------------------
 ; Loop CDDA track
@@ -110,7 +70,7 @@ INT_LoopCddaCmd:
 	xdef LoopCdda
 LoopCdda:
 	move.w	#MSCPLAYR,-(sp)					; Loop CDDA track
-	bra.s	HandleCddaTrack
+	bra.w	BasicBiosFunctionW
 
 ; ------------------------------------------------------------------------------
 ; Play CDDA at time
@@ -128,7 +88,7 @@ INT_PlayCddaTimeCmd:
 	xdef PlayCddaTime
 PlayCddaTime:
 	move.w	#MSCPLAYT,-(sp)					; Play CDDA at time
-	bra.s	HandleCddaTime
+	bra.w	BasicBiosFunctionL
 
 ; ------------------------------------------------------------------------------
 ; Stop CDDA
@@ -211,7 +171,7 @@ INT_SeekCddaCmd:
 	xdef SeekCdda
 SeekCdda:
 	move.w	#MSCSEEK,-(sp)					; Seek to CDDA track
-	bra.w	HandleCddaTrack
+	bra.w	BasicBiosFunctionW
 
 ; ------------------------------------------------------------------------------
 ; Seek to CDDA time
@@ -229,6 +189,6 @@ INT_SeekCddaTimeCmd:
 	xdef SeekCddaTime
 SeekCddaTime:
 	move.w	#MSCSEEKT,-(sp)					; Seek to CDDA time
-	bra.w	HandleCddaTime
+	bra.w	BasicBiosFunctionL
 
 ; ------------------------------------------------------------------------------

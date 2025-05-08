@@ -276,6 +276,23 @@ GetCdDriveStatus:
 	rts
 
 ; ------------------------------------------------------------------------------
+; Wait for the CD drive to be ready
+; ------------------------------------------------------------------------------
+
+	xdef WaitCdDriveReady
+WaitCdDriveReady:
+	move	sr,-(sp)					; Save status register
+	move	#$2700,sr					; Disable interrupts
+
+.Wait:
+	bsr.s	GetCdDriveStatus				; Is the CD drive ready?
+	andi.w	#$F000,d0
+	bne.s	.Wait						; If not, wait
+
+	move	(sp)+,sr					; Restore interrupts
+	rts
+
+; ------------------------------------------------------------------------------
 ; Play all CDDA tracks
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
@@ -442,13 +459,19 @@ SubCpuCommand:
 	move.b	(sp)+,MCD_MAIN_FLAG				; Set command ID
 
 WaitSubCpuCmd:
+	move	sr,-(sp)					; Save status register
+	move	#$2700,sr					; Disable interrupts
+
+.WaitSubAck:
 	cmpi.b	#"C",MCD_SUB_FLAG				; Has the Sub CPU acknowledged it?
-	bne.s	WaitSubCpuCmd					; If not, wait
+	bne.s	.WaitSubAck					; If not, wait
 	clr.b	MCD_MAIN_FLAG					; Reset command ID
 
 .WaitSubFinish:
 	tst.b	MCD_SUB_FLAG					; Has the Sub CPU finished?
 	bne.s	.WaitSubFinish					; If not, wait
+
+	move	(sp)+,sr					; Restore interrupts
 	rts
 
 ; ------------------------------------------------------------------------------
