@@ -16,7 +16,7 @@
 
 	include	"mcd_sub.inc"
 
-	section code_main
+	section main
 
 ; ------------------------------------------------------------------------------
 ; Initialization

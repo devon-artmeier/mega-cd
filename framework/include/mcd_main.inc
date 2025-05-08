@@ -263,11 +263,11 @@ BRMVERIFY		equ 8					; Verify written Backup RAM data
 ; VDP command instruction
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	ins  - Instruction
-;	addr - Address in VDP memory
-;	type - Type of VDP memory
-;	rwd  - VDP command
-;	dest - Destination (optional)
+;	\1 - Instruction
+;	\2 - Address in VDP memory
+;	\3 - Type of VDP memory
+;	\4 - VDP command
+;	\5 - Destination (optional)
 ; ------------------------------------------------------------------------------
 
 VRAM_WRITE_CMD		equ $40000000				; VRAM write
@@ -283,13 +283,12 @@ VRAM_COPY_CMD		equ $000000C0				; VRAM DMA copy
 
 ; ------------------------------------------------------------------------------
 
-vdpCmd macro ins, addr, type, rwd, dest
-	local cmd
-	cmd: = (\type\_\rwd\_CMD)|(((\addr)&$3FFF)<<16)|((\addr)/$4000)
-	if narg=5
-		\ins	#\#cmd,\dest
+vdpCmd macro
+	__vdp_cmd: set (\3\_\4\_CMD)|(((\2)&$3FFF)<<16)|((\2)/$4000)
+	if \#=5
+		\1	#__vdp_cmd,\5
 	else
-		\ins	cmd
+		\1	__vdp_cmd
 	endif
 	endm
 
@@ -297,20 +296,19 @@ vdpCmd macro ins, addr, type, rwd, dest
 ; VDP command instruction (low word)
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	ins  - Instruction
-;	addr - Address in VDP memory
-;	type - Type of VDP memory
-;	rwd  - VDP command
-;	dest - Destination (optional)
+;	\1 - Instruction
+;	\2 - Address in VDP memory
+;	\3 - Type of VDP memory
+;	\4 - VDP command
+;	\5 - Destination (optional)
 ; ------------------------------------------------------------------------------
 
-vdpCmdLo macro ins, addr, type, rwd, dest
-	local cmd
-	cmd: = ((\type\_\rwd\_CMD)&$FFFF)|((\addr)/$4000)
-	if narg=5
-		\ins	#\#cmd,\dest
+vdpCmdLo macro
+	__vdp_cmd: set ((\3\_\4\_CMD)&$FFFF)|((\2)/$4000)
+	if \#=5
+		\1	#__vdp_cmd,\5
 	else
-		\ins	cmd
+		\1	__vdp_cmd
 	endif
 	endm
 
@@ -318,20 +316,19 @@ vdpCmdLo macro ins, addr, type, rwd, dest
 ; VDP command instruction (high word)
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	ins  - Instruction
-;	addr - Address in VDP memory
-;	type - Type of VDP memory
-;	rwd  - VDP command
-;	dest - Destination (optional)
+;	\1 - Instruction
+;	\2 - Address in VDP memory
+;	\3 - Type of VDP memory
+;	\4 - VDP command
+;	\5 - Destination (optional)
 ; ------------------------------------------------------------------------------
 
-vdpCmdHi macro ins, addr, type, rwd, dest
-	local cmd
-	cmd: = ((\type\_\rwd\_CMD)>>16)|((\addr)&$3FFF)
-	if narg=5
-		\ins	#\#cmd,\dest
+vdpCmdHi macro
+	__vdp_cmd: set ((\3\_\4\_CMD)>>16)|((\2)&$3FFF)
+	if \#=5
+		\1	#__vdp_cmd,\5
 	else
-		\ins	cmd
+		\1	__vdp_cmd
 	endif
 	endm
 	
@@ -339,13 +336,13 @@ vdpCmdHi macro ins, addr, type, rwd, dest
 ; Wait for a VDP DMA to finish
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	ctrl - VDP control port (optional)
+;	\1 - VDP control port (optional)
 ; ------------------------------------------------------------------------------
 
-waitDma macro ctrl
+waitDma macro
 .Wait\@:
-	if narg>0
-		move	\ctrl,ccr
+	if \#>0
+		move	\1,ccr
 	else
 		move	VDP_CTRL,ccr
 	endif
@@ -364,7 +361,7 @@ waitDma macro ctrl
 ; ------------------------------------------------------------------------------
 
 dma68k macro src, dest, len, type, ctrl
-	if narg>4
+	if \#>4
 		move.l	#$94009300|((((\len)/2)&$FF00)<<8)|(((\len)/2)&$FF),\ctrl
 		move.l	#$96009500|((((\src)/2)&$FF00)<<8)|(((\src)/2)&$FF),\ctrl
 		move.w	#$9700|(((\src)>>17)&$7F),\ctrl
@@ -394,7 +391,7 @@ dma68k macro src, dest, len, type, ctrl
 ; ------------------------------------------------------------------------------
 
 vramFill macro addr, len, byte, ctrl, data
-	if narg>3
+	if \#>3
 		move.l	#$94009300|((((\len)-1)&$FF00)<<8)|(((\len)-1)&$FF),\ctrl
 		move.w	#$9780,\ctrl
 		vdpCmd move.l,\addr,VRAM,DMA,\ctrl
@@ -421,7 +418,7 @@ vramFill macro addr, len, byte, ctrl, data
 ; ------------------------------------------------------------------------------
 
 vramCopy macro src, dest, len, ctrl
-	if narg>3
+	if \#>3
 		move.l	#$94009300|((((\len)-1)&$FF00)<<8)|(((\len)-1)&$FF),\ctrl
 		move.l	#$96009500|(((\src)&$FF00)<<8)|((\src)&$FF),\ctrl
 		move.w	#$97C0,\ctrl
@@ -444,7 +441,7 @@ vramCopy macro src, dest, len, ctrl
 ; ------------------------------------------------------------------------------
 
 requestZ80 macro reg
-	if narg>0
+	if \#>0
 		move.w	#$100,\reg
 	else
 		move.w	#$100,Z80_BUS
@@ -460,7 +457,7 @@ requestZ80 macro reg
 
 waitZ80 macro reg
 .Wait\@:
-	if narg>0
+	if \#>0
 		btst	#0,\reg
 	else
 		btst	#0,Z80_BUS
@@ -476,7 +473,7 @@ waitZ80 macro reg
 ; ------------------------------------------------------------------------------
 
 stopZ80 macro reg
-	if narg>0
+	if \#>0
 		requestZ80 \reg
 		waitZ80 \reg
 	else
@@ -493,7 +490,7 @@ stopZ80 macro reg
 ; ------------------------------------------------------------------------------
 
 startZ80 macro reg
-	if narg>0
+	if \#>0
 		move.w	#0,\reg
 	else
 		move.w	#0,Z80_BUS
@@ -508,7 +505,7 @@ startZ80 macro reg
 ; ------------------------------------------------------------------------------
 
 resetZ80On macro reg
-	if narg>0
+	if \#>0
 		move.w	#0,\reg
 	else
 		move.w	#0,Z80_RESET
@@ -524,7 +521,7 @@ resetZ80On macro reg
 ; ------------------------------------------------------------------------------
 
 resetZ80Off macro reg
-	if narg>0
+	if \#>0
 		move.w	#$100,\reg
 	else
 		move.w	#$100,Z80_RESET

@@ -4,8 +4,17 @@ MEMORY {
 
 SECTIONS {
 	code: {
+		*(header);
+		. = ALIGN(2);
+		*(init);
+		. = ALIGN(2);
+		*(lib);
+		. = ALIGN(2);
 		*(code);
 		. = ALIGN(2);
 		*(data);
+		. = ALIGN(2);
+		*(error);
+		MDDBG__SymbolDataPtr = .;
 	} > rom
 }

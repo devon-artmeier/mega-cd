@@ -11,6 +11,7 @@ include ../../common.mk
 OUT_PATH             := out
 SRC_PATH             := src
 INCLUDE_PATH         := ../../include
+FRAMEWORK_PATH       := ../../out
 BUILD_PATH           := $(OUT_PATH)/build
 
 OUT_PATH_EXISTS      := $(wildcard $(OUT_PATH))
@@ -19,8 +20,8 @@ OUT_PATH_EXISTS      := $(wildcard $(OUT_PATH))
 # Tool flags
 # ------------------------------------------------------------------------------
 
-VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH)
-MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH)
+VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH) -I$(FRAMEWORK_PATH)
+MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH) -i $(FRAMEWORK_PATH)
 
 # ------------------------------------------------------------------------------
 # Files
@@ -38,7 +39,7 @@ LINKER               := linker.link
 # Reserved rules
 # ------------------------------------------------------------------------------
 
-.PHONY: all clean
+.PHONY: all clean framework
 
 # ------------------------------------------------------------------------------
 # Make all
@@ -65,11 +66,14 @@ $(OUT): $(OBJ) | $(OUT_PATH)
 
 $(OBJ): $(BUILD_PATH)/%.o: $(SRC_PATH)/%.asm | $(BUILD_PATH) $(DEPEND)
 	$(ASSEMBLE_MSG)
-	@$(VASM) $(VASM_FLAGS) -L $(patsubst %.o,%.lst,$@) -o $@ $<
+	@$(VASM) $(VASM_FLAGS) -DUSE_MCD_MODE_1=1 -L $(patsubst %.o,%.lst,$@) -o $@ $<
 
-$(DEPEND): $(BUILD_PATH)/%.d: $(SRC_PATH)/%.asm | $(BUILD_PATH)
+$(DEPEND): $(BUILD_PATH)/%.d: $(SRC_PATH)/%.asm | $(BUILD_PATH) framework
 	$(DEPEND_MSG)
 	@$(MKASMDEP) $(MKASMDEP_FLAGS) -o $@ $(patsubst %.d,%.o,$@) $<
+
+framework:
+	make -C ../..
 
 # ------------------------------------------------------------------------------
 # Path rules

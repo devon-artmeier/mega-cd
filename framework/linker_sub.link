@@ -7,7 +7,7 @@ SECTIONS {
 		INT_ProgramStart = .;
 		*(header);
 		. = ALIGN(2);
-		*(code_main);
+		*(main);
 		. = ALIGN(2);
 		*(code);
 		. = ALIGN(2);

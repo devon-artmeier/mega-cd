@@ -29,9 +29,6 @@
 ;	a0.l  - Sub CPU program address
 ;	d0.l  - Sub CPU program size
 ; RETURNS:
-;	d0.b  - Error code
-;	        0 - Success
-;	        1 - No BIOS found
 ;	eq/ne - Success/Failure
 ; ------------------------------------------------------------------------------
 
@@ -40,7 +37,7 @@ InitSubCpu:
 	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
 
 	bsr.w	FindBios					; Find BIOS
-	bne.w	.NoBiosFound					; If no BIOS was found, branch
+	bne.s	.Fail						; If no BIOS was found, branch
 	
 	lea	MCD_MAIN_COMMS,a1				; Clear communication registers
 	moveq	#0,d1
@@ -76,12 +73,12 @@ InitSubCpu:
 	bsr.w	ReleaseSubCpuBus				; Release Sub CPU bus
 
 	movem.l (sp)+,d0-d1/a0-a1				; Success
-	moveq	#0,d0
+	ori	#4,ccr
 	rts
 
-.NoBiosFound:
-	movem.l (sp)+,d0-d1/a0-a1				; No BIOS found
-	moveq	#1,d0
+.Fail:
+	movem.l (sp)+,d0-d1/a0-a1				; Failure
+	andi	#~4,ccr
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -95,7 +92,7 @@ InitSubCpu:
 FindBios:
 	movem.l	d0/a2-a4,-(sp)					; Save registers
 	
-	lea	CARTRIDGE+$100,a2				; Get BIOS header
+	lea	BIOS+$100,a2					; Get BIOS header
 	cmpi.l	#"SEGA",(a2)					; Is the "SEGA" signature present?
 	bne.s	.End						; If not, branch
 	cmpi.w	#"BR",$80(a2)					; Is the "Boot ROM" software type present?
@@ -135,26 +132,26 @@ FindBios:
 	dc.l	0
 	
 .Sega15800:
-	dc.l	CARTRIDGE+$15800
-	dc.l	CARTRIDGE+$1586D
+	dc.l	BIOS+$15800
+	dc.l	BIOS+$1586D
 	dc.b	"SEGA", 0
 	even
 	
 .Sega16000:
-	dc.l	CARTRIDGE+$16000
-	dc.l	CARTRIDGE+$1606D
+	dc.l	BIOS+$16000
+	dc.l	BIOS+$1606D
 	dc.b	"SEGA", 0
 	even
 	
 .Sega1AD00:
-	dc.l	CARTRIDGE+$1AD00
-	dc.l	CARTRIDGE+$1AD6D
+	dc.l	BIOS+$1AD00
+	dc.l	BIOS+$1AD6D
 	dc.b	"SEGA", 0
 	even
 	
 .Wonder16000:
-	dc.l	CARTRIDGE+$16000
-	dc.l	CARTRIDGE+$1606D
+	dc.l	BIOS+$16000
+	dc.l	BIOS+$1606D
 	dc.b	"WONDER", 0
 	even
 
