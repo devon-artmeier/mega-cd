@@ -7,7 +7,7 @@ MKDIR                := mkdir
 RMDIR                := rmdir /s /q
 else
 MKDIR                := mkdir -p
-RMDIR                := -rf
+RMDIR                := rm -rf
 endif
 
 # ------------------------------------------------------------------------------
