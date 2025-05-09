@@ -73,6 +73,7 @@ InitSubCpu:
 
 .Fail:
 	movem.l (sp)+,d0-d1/a0-a2				; Failure
+	ori	#4,ccr
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -80,7 +81,7 @@ InitSubCpu:
 ; ------------------------------------------------------------------------------
 ; RETURNS:
 ;	eq/ne - Not found/Found
-;	a1.l  - Pointer to compressed Sub CPU BIOS, if found
+;	a1.l  - Compressed Sub CPU BIOS address, if found
 ; ------------------------------------------------------------------------------
 
 FindBios:
