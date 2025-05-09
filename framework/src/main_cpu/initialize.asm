@@ -32,35 +32,36 @@ WaitSubCpuInit:
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
-	lea	MCD_MAIN_FLAG-(MCD_MAIN_COMMS+$10)(a0),a0
 
+	lea	MCD_SUB_FLAG-(MCD_MAIN_COMMS+$10)(a0),a0	; Get communication flags
 	moveq	#"I",d0						; Initialization flag
 
 .WaitSubInit:
 	if USE_MCD_MODE_1<>0
 		bsr.s	.RequestIrq2				; Request IRQ2
 	endif
-	cmp.b	MCD_SUB_FLAG-MCD_MAIN_FLAG(a0),d0		; Has the Sub CPU initialized?
+	cmp.b	(a0),d0						; Has the Sub CPU initialized?
 	bne.s	.WaitSubInit					; If not, wait
-	move.b	d0,(a0)						; Acknowledge the Sub CPU
+	move.b	d0,MCD_MAIN_FLAG-MCD_SUB_FLAG(a0)		; Acknowledge the Sub CPU
 
 	bsr.w	GiveWordRam					; Give Word RAM access to the Sub CPU
+	
+	clr.b	MCD_MAIN_FLAG-MCD_SUB_FLAG(a0)			; Mark as ready for commands
 
 .WaitSubAck:
 	if USE_MCD_MODE_1<>0
 		bsr.s	.RequestIrq2				; Request IRQ2
 	endif
-	tst.b	MCD_SUB_FLAG-MCD_MAIN_FLAG(a0)			; Has the Sub CPU started?
+	tst.b	(a0)						; Has the Sub CPU started?
 	bne.s	.WaitSubAck					; If not, wait
-	clr.b	(a0)						; Acknowledge the Sub CPU
-
+	
 	movem.l	(sp)+,d0-d1/a0					; Restore registers
 	rts
 
 ; ------------------------------------------------------------------------------
 
 	if USE_MCD_MODE_1<>0
-	.RequestIrq2:
+.RequestIrq2:
 		move.w	#$3000-1,d1				; Request IRQ2
 		dbf	d1,*
 		bra.w	RequestSubCpuIrq2

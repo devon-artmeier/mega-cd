@@ -474,11 +474,11 @@ StartSubCpuModule:
 
 SubCpuCommand:
 	move.b	(sp)+,MCD_MAIN_FLAG				; Set command ID
-
+	
 WaitSubCpuCmd:
 	move	sr,-(sp)					; Save status register
 	move	#$2700,sr					; Disable interrupts
-
+	
 .WaitSubAck:
 	cmpi.b	#"C",MCD_SUB_FLAG				; Has the Sub CPU acknowledged it?
 	bne.s	.WaitSubAck					; If not, wait

@@ -33,10 +33,11 @@ INT_Initialize:
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
-	lea	MCD_MAIN_FLAG-(MCD_SUB_COMMS+$10)(a0),a0
 
-	moveq	#"I",d1						; Mark as initializing
-	move.b	d1,MCD_SUB_FLAG-MCD_MAIN_FLAG(a0)
+	lea	MCD_MAIN_FLAG-(MCD_SUB_COMMS+$10)(a0),a0	; Get communication flags
+	moveq	#"I",d1						; Initialization flag
+
+	move.b	d1,MCD_SUB_FLAG-MCD_MAIN_FLAG(a0)		; Mark as initializing
 
 .WaitMainAck:
 	cmp.b	(a0),d1						; Has the Main CPU acknowledged us?
@@ -62,11 +63,9 @@ INT_UserCall3:
 
 	xdef INT_Main
 INT_Main:
-	clr.b	MCD_SUB_FLAG					; Mark as running
-
-.WaitMainAck:
-	tst.b	MCD_MAIN_FLAG					; Has the Main CPU acknowledged us?
-	bne.s	.WaitMainAck					; If not, wait
+	tst.b	MCD_MAIN_FLAG					; Is the Main CPU ready for commands?
+	bne.s	INT_Main					; If not, wait
+	clr.b	MCD_SUB_FLAG					; Acknowledge the Main CPU
 
 ; ------------------------------------------------------------------------------
 
@@ -78,9 +77,9 @@ INT_Main:
 	beq.s	.WaitCommand					; If not, wait
 	move.b	#"C",MCD_SUB_FLAG				; Acknowledge command
 
-.WaitMainCmdAck:
+.WaitMainAck:
 	tst.b	MCD_MAIN_FLAG					; Has the Main CPU acknowledged us?
-	bne.s	.WaitMainCmdAck					; If so, branch
+	bne.s	.WaitMainAck					; If so, branch
 
 	cmpi.b	#(.CommandsEnd-.Commands)/4,d0			; Is it a valid command?
 	bcc.s	.FinishCommand					; If not, branch
