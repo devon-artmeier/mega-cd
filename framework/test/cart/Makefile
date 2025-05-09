@@ -45,7 +45,7 @@ LINKER               := linker.link
 # Make all
 # ------------------------------------------------------------------------------
 
-all: $(OUT)
+all: framework $(OUT)
 
 # ------------------------------------------------------------------------------
 # Clean
@@ -69,12 +69,12 @@ $(OBJ): $(BUILD_PATH)/%.o: $(SRC_PATH)/%.asm | $(BUILD_PATH) $(DEPEND)
 	$(ASSEMBLE_MSG)
 	@$(VASM) $(VASM_FLAGS) -DUSE_MCD_MODE_1=1 -L $(patsubst %.o,%.lst,$@) -o $@ $<
 
-$(DEPEND): $(BUILD_PATH)/%.d: $(SRC_PATH)/%.asm | $(BUILD_PATH) framework
+$(DEPEND): $(BUILD_PATH)/%.d: $(SRC_PATH)/%.asm | $(BUILD_PATH)
 	$(DEPEND_MSG)
 	@$(MKASMDEP) $(MKASMDEP_FLAGS) -o $@ $(patsubst %.d,%.o,$@) $<
 
 framework:
-	make -C ../..
+	@make -C ../..
 
 # ------------------------------------------------------------------------------
 # Path rules
