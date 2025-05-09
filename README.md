@@ -1,3 +1,3 @@
 # Sega Mega CD Framework
 
-A framework for the Sega Mega CD.
+A framework and set of tools for the Sega Mega CD.
