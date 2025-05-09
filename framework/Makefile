@@ -84,7 +84,7 @@ all: $(OUT_MAIN_CART) $(EXPORT_MAIN_CART) $(OUT_MAIN_CD) $(EXPORT_MAIN_CD) $(OUT
 
 clean:
 ifneq ($(OUT_PATH_EXISTS),)
-	@rmdir /s /q "$(OUT_PATH)"
+	@$(RMDIR) "$(OUT_PATH)"
 endif
 
 # ------------------------------------------------------------------------------
@@ -152,16 +152,16 @@ $(DEPEND_SUB): $(BUILD_PATH)/%.d: $(SRC_PATH)/%.asm | $(BUILD_PATH_SUB)
 # ------------------------------------------------------------------------------
 
 $(OUT_PATH):
-	@mkdir "$@"
+	@$(MKDIR) "$@"
 
 $(BUILD_PATH_MAIN_CART):
-	@mkdir "$@"
+	@$(MKDIR) "$@"
 	
 $(BUILD_PATH_MAIN_CD):
-	@mkdir "$@"
+	@$(MKDIR) "$@"
 
 $(BUILD_PATH_SUB):
-	@mkdir "$@"
+	@$(MKDIR) "$@"
 
 # ------------------------------------------------------------------------------
 # Dependencies
