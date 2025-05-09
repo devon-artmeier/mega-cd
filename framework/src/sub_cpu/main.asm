@@ -24,6 +24,9 @@
 
 	xdef INT_Initialize, INT_UserCall3
 INT_Initialize:
+	bsr.w	SetWordRam2M					; Set Word RAM to 2M mode
+	bsr.w	DisableWordRamPriority				; Disable Word RAM priority
+	
 	lea	MCD_SUB_COMMS,a0				; Set up communication registers
 	moveq	#0,d0
 	move.l	d0,(a0)+
@@ -40,10 +43,6 @@ INT_Initialize:
 	cmp.b	(a0),d1						; Has the Main CPU acknowledged us?
 	bne.s	.WaitMainAck					; If not, wait
 
-; ------------------------------------------------------------------------------
-
-	bsr.w	SetWordRam2M					; Set Word RAM to 2M mode
-	bsr.w	DisableWordRamPriority				; Disable Word RAM priority
 	bsr.w	WaitWordRam					; Wait for Word RAM access
 
 	lea	INT_ProgramEnd(pc),a0				; Clear rest of RAM
