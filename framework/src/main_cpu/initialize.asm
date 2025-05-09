@@ -24,35 +24,46 @@
 
 	xdef WaitSubCpuInit
 WaitSubCpuInit:
-	movem.l	d0/a0,-(sp)					; Save registers
+	movem.l	d0-d1/a0,-(sp)					; Save registers
 
 	lea	MCD_MAIN_COMMS,a0				; Clear communication registers
 	moveq	#0,d0
-	move.b	d0,MCD_MAIN_FLAG-MCD_MAIN_COMMS(a0)
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
+	lea	MCD_MAIN_FLAG-(MCD_MAIN_COMMS+$10)(a0),a0
+
+	moveq	#"I",d0						; Initialization flag
 
 .WaitSubInit:
 	if USE_MCD_MODE_1<>0
-		bsr.w	TriggerSubCpuIrq2			; Trigger IRQ2
-		move.w	#$3000-1,d0				; Delay for a while
-		dbf	d0,*
+		bsr.s	.RequestIrq2				; Request IRQ2
 	endif
-
-	cmpi.b	#"I",MCD_SUB_FLAG				; Has the Sub CPU initialized?
+	cmp.b	MCD_SUB_FLAG-MCD_MAIN_FLAG(a0),d0		; Has the Sub CPU initialized?
 	bne.s	.WaitSubInit					; If not, wait
-	move.b	#"I",MCD_MAIN_FLAG				; Mark as initialized
+	move.b	d0,(a0)						; Acknowledge the Sub CPU
+
+	bsr.w	GiveWordRam					; Give Word RAM access to the Sub CPU
 
 .WaitSubAck:
-	tst.b	MCD_SUB_FLAG					; Has the Sub CPU acknowledged us?
+	if USE_MCD_MODE_1<>0
+		bsr.s	.RequestIrq2				; Request IRQ2
+	endif
+	tst.b	MCD_SUB_FLAG-MCD_MAIN_FLAG(a0)			; Has the Sub CPU started?
 	bne.s	.WaitSubAck					; If not, wait
-	clr.b	MCD_MAIN_FLAG					; Reset command ID
-	
-	bsr.w	GiveWordRam					; Wait for Word RAM access
+	clr.b	(a0)						; Acknowledge the Sub CPU
 
-	movem.l	(sp)+,d0/a0					; Restore registers
+	movem.l	(sp)+,d0-d1/a0					; Restore registers
 	rts
+
+; ------------------------------------------------------------------------------
+
+	if USE_MCD_MODE_1<>0
+	.RequestIrq2:
+		move.w	#$3000-1,d1				; Request IRQ2
+		dbf	d1,*
+		bra.w	RequestSubCpuIrq2
+	endif
 
 ; ------------------------------------------------------------------------------

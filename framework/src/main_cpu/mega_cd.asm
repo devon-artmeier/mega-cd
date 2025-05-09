@@ -31,12 +31,12 @@ CheckSubCpuIrq2:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Trigger Sub CPU IRQ2
+; Request Sub CPU IRQ2
 ; ------------------------------------------------------------------------------
 
-	xdef TriggerSubCpuIrq2
-TriggerSubCpuIrq2:
-	bset	#0,MCD_IRQ2					; Trigger IRQ2
+	xdef RequestSubCpuIrq2
+RequestSubCpuIrq2:
+	bset	#0,MCD_IRQ2					; Request IRQ2
 	rts
 
 ; ------------------------------------------------------------------------------

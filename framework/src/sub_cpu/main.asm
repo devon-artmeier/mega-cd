@@ -26,13 +26,32 @@
 INT_Initialize:
 	bsr.w	SetWordRam2M					; Set Word RAM to 2M mode
 	bsr.w	DisableWordRamPriority				; Disable Word RAM priority
+	
+	lea	MCD_SUB_COMMS,a0				; Set up communication registers
+	moveq	#0,d0
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	lea	MCD_MAIN_FLAG-(MCD_SUB_COMMS+$10)(a0),a0
 
-	lea	MCD_SUB_COMMS,a0				; Clear communication registers
-	move.b	d0,MCD_SUB_FLAG-MCD_SUB_COMMS(a0)
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
+	moveq	#"I",d1						; Mark as initializing
+	move.b	d1,MCD_SUB_FLAG-MCD_MAIN_FLAG(a0)
+
+.WaitMainAck:
+	cmp.b	(a0),d1						; Has the Main CPU acknowledged us?
+	bne.s	.WaitMainAck					; If not, wait
+
+	bsr.w	WaitWordRam					; Wait for Word RAM access
+
+	lea	INT_ProgramEnd(pc),a0				; Clear rest of RAM
+	move.w	#INT_PRG_RAM_CLEAR+(WORD_RAM_2M_SIZE/$20)-1,d1
+
+.ClearRam:
+	rept $20/4
+		move.l	d0,(a0)+
+	endr
+	dbf	d1,.ClearRam
 
 INT_UserCall3:
 	rts
@@ -43,28 +62,11 @@ INT_UserCall3:
 
 	xdef INT_Main
 INT_Main:
-	move.b	#"I",MCD_SUB_FLAG				; Mark as initialized
-
-.WaitMainInit:
-	cmpi.b	#"I",MCD_MAIN_FLAG				; Has the Main CPU initialized?
-	bne.s	.WaitMainInit					; If not, wait
-	clr.b	MCD_SUB_FLAG					; Acknowledge Main CPU
+	clr.b	MCD_SUB_FLAG					; Mark as running
 
 .WaitMainAck:
 	tst.b	MCD_MAIN_FLAG					; Has the Main CPU acknowledged us?
 	bne.s	.WaitMainAck					; If not, wait
-
-	bsr.w	WaitWordRam					; Wait for Word RAM access
-
-	lea	INT_ProgramEnd(pc),a0				; Clear rest of Program RAM and Word RAM
-	moveq	#0,d0
-	move.w	#INT_PRG_RAM_CLEAR+(WORD_RAM_2M_SIZE/$20)-1,d1
-
-.ClearPrgRam:
-	rept $20/4
-		move.l	d0,(a0)+
-	endr
-	dbf	d1,.ClearPrgRam
 
 ; ------------------------------------------------------------------------------
 

@@ -29,7 +29,7 @@
 ;	a0.l  - Sub CPU program address
 ;	d0.l  - Sub CPU program size
 ; RETURNS:
-;	eq/ne - Success/Failure
+;	eq/ne - Failure/Success
 ; ------------------------------------------------------------------------------
 
 	xdef InitSubCpu
@@ -37,23 +37,15 @@ InitSubCpu:
 	movem.l	d0-d1/a0-a2,-(sp)				; Save registers
 
 	bsr.w	FindBios					; Find BIOS
-	bne.s	.Fail						; If no BIOS was found, branch
+	beq.s	.Fail						; If no BIOS was found, branch
 
-	lea	MCD_MAIN_COMMS,a2				; Clear communication registers
-	moveq	#0,d1
-	move.b	d1,MCD_MAIN_FLAG-MCD_MAIN_COMMS(a2)
-	move.l	d1,(a2)+
-	move.l	d1,(a2)+
-	move.l	d1,(a2)+
-	move.l	d1,(a2)+
-
-	lea	MCD_SUB_CTRL-MCD_SUB_COMMS(a2),a2		; Reset sequence
+	lea	MCD_SUB_CTRL,a2					; Gate array reset sequence
 	move.w	#$FF00,1(a2)
 	move.b	#3,(a2)
 	move.b	#2,(a2)
-	move.b	d1,(a2)
+	move.b	#0,(a2)
 
-	moveq	#$80-1,d1					; Wait for a bit to process
+	moveq	#$80-1,d1					; Wait for a bit to process reset
 	dbf	d1,*
 
 	bsr.w	HoldSubCpuReset					; Hold Sub CPU reset
@@ -76,19 +68,18 @@ InitSubCpu:
 	bsr.w	WaitSubCpuInit					; Wait for the Sub CPU to initialize
 
 	movem.l (sp)+,d0-d1/a0-a2				; Success
-	ori	#4,ccr
+	andi	#~4,ccr
 	rts
 
 .Fail:
 	movem.l (sp)+,d0-d1/a0-a2				; Failure
-	andi	#~4,ccr
 	rts
 
 ; ------------------------------------------------------------------------------
 ; Check if there's a BIOS available
 ; ------------------------------------------------------------------------------
 ; RETURNS:
-;	eq/ne - Found/Not found
+;	eq/ne - Not found/Found
 ;	a1.l  - Pointer to compressed Sub CPU BIOS, if found
 ; ------------------------------------------------------------------------------
 
@@ -104,37 +95,37 @@ FindBios:
 	lea	.Signatures(pc),a2				; Get known signature location list
 
 .FindLoop:
-	moveq	#0,d0						; Get next index of signature to check
-	move.w	(a2)+,d0
+	move.w	(a2)+,d0					; Get pointer to signature data to check
+	lea	.Signatures(pc,d0.w),a3
 	beq.s	.NotFound					; If we are at the end of the list, branch
-	
-	add.l	a2,d0						; Get pointer to signature data to check
-	movea.l	d0,a3
 	
 	movea.l	(a3)+,a1					; Get pointer to Sub CPU BIOS
 	movea.l	(a3)+,a4					; Get pointer to signature
 
 .CheckSignature:
 	move.b	(a3)+,d0					; Get character
-	beq.s	.End						; If we are done checking, branch
+	beq.s	.Found						; If we are done checking, branch
 	cmp.b	(a4)+,d0					; Does the signature match so far?
 	bne.s	.FindLoop					; If not, check the next BIOS
 	bra.s	.CheckSignature					; Loop until signature is fully checked
 
-.NotFound:
-	andi	#~4,ccr						; BIOS not found
+.Found:
+	movem.l	(sp)+,d0/a2-a4					; BIOS found
+	andi	#~4,sr
+	rts
 
-.End:
-	movem.l	(sp)+,d0/a2-a4					; Restore registers
+.NotFound:
+	movem.l	(sp)+,d0/a2-a4					; BIOS not found
+	ori	#4,sr
 	rts
 
 ; ------------------------------------------------------------------------------
 
 .Signatures:
-	dc.w	.Sega15800-(*+2)
-	dc.w	.Sega16000-(*+2)
-	dc.w	.Sega1AD00-(*+2)
-	dc.w	.Wonder16000-(*+2)
+	dc.w	.Sega15800-.Signatures
+	dc.w	.Sega16000-.Signatures
+	dc.w	.Sega1AD00-.Signatures
+	dc.w	.Wonder16000-.Signatures
 	dc.w	0
 	
 .Sega15800:
