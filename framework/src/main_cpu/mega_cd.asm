@@ -117,7 +117,7 @@ ReleaseSubCpuBus:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Check if we have access to Word RAM bank 0
+; Check if we have access to Word RAM bank 0 (1M/1M)
 ; ------------------------------------------------------------------------------
 ; RETURNS:
 ;	eq/ne - No access/Access
@@ -130,7 +130,8 @@ CheckWordRamBank0:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Check if we have access to Word RAM or if we have access to Word RAM bank 1
+; Check if we have access to Word RAM (2M)
+; Check if we have access to Word RAM bank 1 (1M/1M)
 ; ------------------------------------------------------------------------------
 ; RETURNS:
 ;	eq/ne - No access/Access
@@ -144,7 +145,7 @@ CheckWordRamBank1:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Give Word RAM access to the Sub CPU
+; Give Word RAM access to the Sub CPU (2M)
 ; ------------------------------------------------------------------------------
 
 	xdef GiveWordRam
@@ -154,7 +155,7 @@ GiveWordRam:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Wait for Word RAM bank 0 access
+; Wait for Word RAM bank 0 access (1M/1M)
 ; ------------------------------------------------------------------------------
 
 	xdef WaitWordRamBank0
@@ -164,7 +165,8 @@ WaitWordRamBank0:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Wait for Word RAM access or Word RAM bank 1 access
+; Wait for Word RAM access (2M)
+; Wait for Word RAM bank 1 access (1M/1M)
 ; ------------------------------------------------------------------------------
 
 	xdef WaitWordRam
@@ -178,6 +180,9 @@ WaitWordRamBank1:
 ; ------------------------------------------------------------------------------
 ; Check if we are in Word RAM 1M/1M mode
 ; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - Not 1M/1M mode/1M/1M mode
+; ------------------------------------------------------------------------------
 
 	xdef CheckWordRam1M
 CheckWordRam1M:
@@ -186,6 +191,9 @@ CheckWordRam1M:
 
 ; ------------------------------------------------------------------------------
 ; Check if we are in Word RAM 2M mode
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - Not 2M mode/2M mode
 ; ------------------------------------------------------------------------------
 
 	xdef CheckWordRam2M
@@ -240,6 +248,79 @@ CopyPrgRamData:
 
 .Done:
 	movem.l	(sp)+,d0/d2/a1					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Clear Program RAM bank
+; ------------------------------------------------------------------------------
+
+	xdef ClearPrgRamBank
+ClearPrgRamBank:
+	movem.l	d0-d1/a0,-(sp)					; Save registers
+
+	lea	PRG_RAM_BANK,a0					; Clear Program RAM bank
+	moveq	#0,d0
+	move.w	#(PRG_RAM_BANK_SIZE/$20)-1,d1
+
+.Clear:
+	rept $20/4
+		move.l	d0,(a0)+
+	endr
+	dbf	d1,.Clear
+	
+	movem.l	(sp)+,d0-d1/a0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Clear Word RAM bank (1M/1M)
+; ------------------------------------------------------------------------------
+
+	xdef ClearWordRamBank
+ClearWordRamBank:
+	bsr.w	CheckWordRam1M					; Are we in 1M/1M mode?
+	beq.s	.End						; If not, branch
+
+	movem.l	d0-d1/a0,-(sp)					; Save registers
+
+	lea	WORD_RAM_1M,a0					; Clear Word RAM bank
+	moveq	#0,d0
+	move.w	#(WORD_RAM_1M_SIZE/$20)-1,d1
+
+.Clear:
+	rept $20/4
+		move.l	d0,(a0)+
+	endr
+	dbf	d1,.Clear
+
+	movem.l	(sp)+,d0-d1/a0					; Restore registers
+
+.End:
+	rts
+
+; ------------------------------------------------------------------------------
+; Clear Word RAM (2M)
+; ------------------------------------------------------------------------------
+
+	xdef ClearWordRam
+ClearWordRam:
+	bsr.w	CheckWordRam2M					; Are we in 2M mode?
+	beq.s	.End						; If not, branch
+
+	movem.l	d0-d1/a0,-(sp)					; Save registers
+
+	lea	WORD_RAM_2M,a0					; Clear Word RAM bank
+	moveq	#0,d0
+	move.w	#(WORD_RAM_2M_SIZE/$20)-1,d1
+
+.Clear:
+	rept $20/4
+		move.l	d0,(a0)+
+	endr
+	dbf	d1,.Clear
+	
+	movem.l	(sp)+,d0-d1/a0					; Restore registers
+
+.End:
 	rts
 
 ; ------------------------------------------------------------------------------

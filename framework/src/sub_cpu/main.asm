@@ -45,17 +45,9 @@ XREF_Initialize:
 	
 	bsr.w	WaitWordRam					; Wait for Word RAM access
 
-	lea	XREF_ProgramEnd(pc),a0				; Clear rest of RAM
-	move.w	#XREF_PRG_RAM_CLEAR+(WORD_RAM_2M_SIZE/$20)-1,d1
-
-.ClearRam:
-	rept $20/4
-		move.l	d0,(a0)+
-	endr
-	dbf	d1,.ClearRam
-
-	bsr.w	InitPcm						; Initialize PCM
-	bra.w	UnloadModule					; Unload module
+	bsr.w	ResetPrgRam					; Reset Program RAM
+	bsr.w	ClearWordRam					; Clear Word RAM
+	bra.w	InitPcm						; Initialize PCM
 
 ; ------------------------------------------------------------------------------
 ; Main

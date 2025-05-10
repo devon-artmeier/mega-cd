@@ -19,7 +19,7 @@
 	section code
 
 ; ------------------------------------------------------------------------------
-; Check if we have access to Word RAM bank 0
+; Check if we have access to Word RAM bank 0 (1M/1M)
 ; ------------------------------------------------------------------------------
 ; RETURNS:
 ;	eq/ne - No access/Access
@@ -31,7 +31,7 @@ CheckWordRamBank0:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Check if we have access to Word RAM bank 1
+; Check if we have access to Word RAM bank 1 (1M/1M)
 ; ------------------------------------------------------------------------------
 ; RETURNS:
 ;	eq/ne - No access/Access
@@ -44,7 +44,7 @@ CheckWordRamBank1:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Check if we have access to Word RAM
+; Check if we have access to Word RAM (2M)
 ; ------------------------------------------------------------------------------
 ; RETURNS:
 ;	eq/ne - No access/Access
@@ -56,7 +56,7 @@ CheckWordRam:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Swap Word RAM banks
+; Swap Word RAM banks (1M/1M)
 ; ------------------------------------------------------------------------------
 
 	xdef SwapWordRamBanks
@@ -67,7 +67,7 @@ XREF_SwapWordRamBanksCmd:
 	bne.s	SetWordRamBank1					; If so, branch
 
 ; ------------------------------------------------------------------------------
-; Access Word RAM bank 0
+; Access Word RAM bank 0 (1M/1M)
 ; ------------------------------------------------------------------------------
 
 	xdef SetWordRamBank0
@@ -78,7 +78,7 @@ XREF_SetWordRamBank1Cmd:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Access Word RAM bank 1
+; Access Word RAM bank 1 (1M/1M)
 ; ------------------------------------------------------------------------------
 
 	xdef SetWordRamBank1
@@ -89,7 +89,7 @@ XREF_SetWordRamBank0Cmd:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Give Word RAM access to the Main CPU
+; Give Word RAM access to the Main CPU (2M)
 ; ------------------------------------------------------------------------------
 
 	xdef GiveWordRam
@@ -99,7 +99,7 @@ GiveWordRam:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Wait for Word RAM access
+; Wait for Word RAM access (2M)
 ; ------------------------------------------------------------------------------
 
 	xdef WaitWordRam
@@ -111,6 +111,9 @@ WaitWordRam:
 ; ------------------------------------------------------------------------------
 ; Check if we are in Word RAM 1M/1M mode
 ; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - Not 1M/1M mode/1M/1M mode
+; ------------------------------------------------------------------------------
 
 	xdef CheckWordRam1M
 CheckWordRam1M:
@@ -118,7 +121,10 @@ CheckWordRam1M:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Check if we are in 2M mode
+; Check if we are in Word RAM 2M mode
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - Not 2M mode/2M mode
 ; ------------------------------------------------------------------------------
 
 	xdef CheckWordRam2M
@@ -190,34 +196,79 @@ SetWordRamUnderwrite:
 	bsr.s	DisableWordRamPriority				; Set overwrite
 	ori.b	#$10,MCD_MEM_MODE
 	rts
+
+; ------------------------------------------------------------------------------
+; Reset Program RAM
+; ------------------------------------------------------------------------------
+
+	xdef ResetPrgRam
+ResetPrgRam:
+	movem.l	d0-d1/a0,-(sp)					; Save registers
+
+	lea	XREF_ProgramEnd.w,a0				; Clear non-program parts of Program RAM
+	moveq	#0,d0
+	move.w	#XREF_PRG_RAM_CLEAR-1,d1
+
+.Clear:
+	rept $20/4
+		move.l	d0,(a0)+
+	endr
+	dbf	d1,.Clear
 	
-; ------------------------------------------------------------------------------
-; Check if the BIOS is handling commands
-; ------------------------------------------------------------------------------
-; RETURNS:
-;	eq/ne - No commands/Handling commands
-; ------------------------------------------------------------------------------
-
-	xdef CheckBiosFunction
-CheckBiosFunction:
-	movem.l d0-d1/a0-a1,-(sp)				; Save registers
-
-	move.w	#CDBCHK,d0					; Check BIOS function status
-	jsr	_CDBIOS
-	scc	d0
-	tst.b	d0
-
-	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	bsr.w	UnloadModule					; Unload module
+	movem.l	(sp)+,d0-d1/a0					; Restore registers
 	rts
 
 ; ------------------------------------------------------------------------------
-; Wait until a BIOS function is completed
+; Clear Word RAM bank (1M/1M)
 ; ------------------------------------------------------------------------------
 
-	xdef WaitBiosFunction
-WaitBiosFunction:
-	bsr.s	CheckBiosFunction				; Check BIOS function status
-	bne.s	WaitBiosFunction				; If it's not done, branch
+	xdef ClearWordRamBank
+ClearWordRamBank:
+	bsr.w	CheckWordRam1M					; Are we in 1M/1M mode?
+	beq.s	.End						; If not, branch
+
+	movem.l	d0-d1/a0,-(sp)					; Save registers
+
+	lea	WORD_RAM_1M,a0					; Clear Word RAM bank
+	moveq	#0,d0
+	move.w	#(WORD_RAM_1M_SIZE/$20)-1,d1
+
+.Clear:
+	rept $20/4
+		move.l	d0,(a0)+
+	endr
+	dbf	d1,.Clear
+
+	movem.l	(sp)+,d0-d1/a0					; Restore registers
+
+.End:
+	rts
+
+; ------------------------------------------------------------------------------
+; Clear Word RAM (2M)
+; ------------------------------------------------------------------------------
+
+	xdef ClearWordRam
+ClearWordRam:
+	bsr.w	CheckWordRam2M					; Are we in 2M mode?
+	beq.s	.End						; If not, branch
+
+	movem.l	d0-d1/a0,-(sp)					; Save registers
+
+	lea	WORD_RAM_2M,a0					; Clear Word RAM bank
+	moveq	#0,d0
+	move.w	#(WORD_RAM_2M_SIZE/$20)-1,d1
+
+.Clear:
+	rept $20/4
+		move.l	d0,(a0)+
+	endr
+	dbf	d1,.Clear
+	
+	movem.l	(sp)+,d0-d1/a0					; Restore registers
+
+.End:
 	rts
 
 ; ------------------------------------------------------------------------------
