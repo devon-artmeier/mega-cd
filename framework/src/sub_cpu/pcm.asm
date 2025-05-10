@@ -237,8 +237,6 @@ PlayPcm:
 
 	xdef StopPcm
 StopPcm:
-	bsr.w	SetPcmChannelFast				; Set channel
-
 	bset	d0,pcm_on_off.w					; Stop channel
 	move.b	pcm_on_off.w,PCM_ENABLE
 	bra.w	PcmDelay
