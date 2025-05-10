@@ -84,6 +84,9 @@ XREF_Main:
 	xdef XREF_MegaDriveIrq
 XREF_MegaDriveIrq:
 	movem.l	d0-a6,-(sp)					; Save registers
+	
+	tst.b	accept_commands					; Are we accepting commands?
+	beq.s	.End						; If not, branch
 
 	moveq	#0,d0						; Has a command been sent?
 	move.b	MCD_MAIN_FLAG,d0
@@ -94,9 +97,6 @@ XREF_MegaDriveIrq:
 .WaitMainAck:
 	tst.b	MCD_MAIN_FLAG					; Has the Main CPU acknowledged us?
 	bne.s	.WaitMainAck					; If so, branch
-	
-	tst.b	accept_commands					; Are we accepting commands?
-	beq.s	.FinishCommand					; If not, branch
 
 	cmpi.b	#(.CommandsEnd-.Commands)/4,d0			; Is it a valid command?
 	bcc.s	.FinishCommand					; If not, branch
@@ -106,7 +106,9 @@ XREF_MegaDriveIrq:
 	jsr	.Commands-4(pc,d0.w)
 
 .FinishCommand:
+	movem.l	(sp)+,d0-a6					; Restore registers
 	clr.b	MCD_SUB_FLAG					; Mark as finished
+	rts
 
 .End:
 	movem.l	(sp)+,d0-a6					; Restore registers
@@ -161,6 +163,6 @@ accept_commands		ds.b 1					; Accepting commands flag
 			ds.b 1
 
 	xdef XREF_bios_params
-XREF_bios_params		ds.b 8				; BIOS parameters
+XREF_bios_params	ds.b 8					; BIOS parameters
 
 ; ------------------------------------------------------------------------------

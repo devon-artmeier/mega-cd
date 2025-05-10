@@ -22,73 +22,101 @@
 ; Play all CDDA tracks
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w/$00.w - Starting track ID
+;	d0/$00.w - Starting track ID
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_PlayAllCddaCmd
 XREF_PlayAllCddaCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
+	move.w	MCD_MAIN_COMM_0,d0				; Get parameters
 
 ; ------------------------------------------------------------------------------
 
 	xdef PlayAllCdda
 PlayAllCdda:
-	move.w	#MSCPLAY,-(sp)					; Play all CDDA tracks
-	bra.w	BasicBiosFunctionW
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+	
+	lea	XREF_bios_params.w,a0				; Play all CDDA tracks
+	move.w	d0,(a0)
+	moveq	#MSCPLAY,d0
+	jsr	_CDBIOS
+	
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Play CDDA track
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	$00.w - Track ID
+;	d0/$00.w - Track ID
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_PlayCddaCmd
 XREF_PlayCddaCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
+	move.w	MCD_MAIN_COMM_0,d0				; Get parameters
 
 ; ------------------------------------------------------------------------------
 
 	xdef PlayCdda
 PlayCdda:
-	move.w	#MSCPLAY1,-(sp)					; Play CDDA track
-	bra.w	BasicBiosFunctionW
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+	
+	lea	XREF_bios_params.w,a0				; Play CDDA track
+	move.w	d0,(a0)
+	moveq	#MSCPLAY1,d0
+	jsr	_CDBIOS
+	
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Loop CDDA track
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	$00.w - Track ID
+;	d0/$00.w - Track ID
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_LoopCddaCmd
 XREF_LoopCddaCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
+	move.w	MCD_MAIN_COMM_0,d0				; Get parameters
 
 ; ------------------------------------------------------------------------------
 
 	xdef LoopCdda
 LoopCdda:
-	move.w	#MSCPLAYR,-(sp)					; Loop CDDA track
-	bra.w	BasicBiosFunctionW
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+	
+	lea	XREF_bios_params.w,a0				; Loop CDDA track
+	move.w	d0,(a0)
+	moveq	#MSCPLAYR,d0
+	jsr	_CDBIOS
+	
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Play CDDA at time
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	$00.l - Timecode
+;	d0/$00.l - Timecode
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_PlayCddaTimeCmd
 XREF_PlayCddaTimeCmd:
-	move.l	MCD_MAIN_COMM_0,d0				; Get timecode
+	move.l	MCD_MAIN_COMM_0,d0				; Get parameters
 
 ; ------------------------------------------------------------------------------
 
 	xdef PlayCddaTime
 PlayCddaTime:
-	move.w	#MSCPLAYT,-(sp)					; Play CDDA at time
-	bra.w	BasicBiosFunctionL
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+	
+	lea	XREF_bios_params.w,a0				; Play CDDA at time
+	move.l	d0,(a0)
+	moveq	#MSCPLAYT,d0
+	jsr	_CDBIOS
+	
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Stop CDDA
@@ -98,8 +126,13 @@ PlayCddaTime:
 	xdef XREF_StopCddaCmd
 StopCdda:
 XREF_StopCddaCmd:
-	move.w	#MSCSTOP,-(sp)					; Stop CDDA
-	bra.w	BasicBiosFunction
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+
+	moveq	#MSCSTOP,d0					; Stop CDDA
+	jsr	_CDBIOS
+
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Pause CDDA
@@ -109,8 +142,13 @@ XREF_StopCddaCmd:
 	xdef XREF_PauseCddaCmd
 PauseCdda:
 XREF_PauseCddaCmd:
-	move.w	#MSCPAUSEON,-(sp)				; Pause CDDA
-	bra.w	BasicBiosFunction
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+
+	moveq	#MSCPAUSEON,d0					; Pause CDDA
+	jsr	_CDBIOS
+
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Unpause CDDA
@@ -120,17 +158,22 @@ XREF_PauseCddaCmd:
 	xdef XREF_UnpauseCddaCmd
 UnpauseCdda:
 XREF_UnpauseCddaCmd:
-	move.w	#MSCPAUSEOFF,-(sp)				; Unpause CDDA
-	bra.w	BasicBiosFunction
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+
+	moveq	#MSCPAUSEOFF,d0					; Unpause CDDA
+	jsr	_CDBIOS
+
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Set CDDA speed
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	$00.w - Speed setting
-;	        0 - Normal
-;	        1 - Fast forward
-;	        2 - Fast reverse
+;	d0/$00.w - Speed setting
+;	           0 - Normal
+;	           1 - Fast forward
+;	           2 - Fast reverse
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_SetCddaSpeedCmd
@@ -159,19 +202,26 @@ SetCddaSpeed:
 ; Seek to CDDA track
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	$00.w - Track ID
+;	d0/$00.w - Track ID
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_SeekCddaCmd
 XREF_SeekCddaCmd:
-	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
+	move.w	MCD_MAIN_COMM_0,d0				; Get parameters
 
 ; ------------------------------------------------------------------------------
 
 	xdef SeekCdda
 SeekCdda:
-	move.w	#MSCSEEK,-(sp)					; Seek to CDDA track
-	bra.w	BasicBiosFunctionW
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+	
+	lea	XREF_bios_params.w,a0				; Seek to CDDA track
+	move.w	d0,(a0)
+	moveq	#MSCSEEK,d0
+	jsr	_CDBIOS
+	
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Seek to CDDA time
@@ -182,13 +232,20 @@ SeekCdda:
 
 	xdef XREF_SeekCddaTimeCmd
 XREF_SeekCddaTimeCmd:
-	move.l	MCD_MAIN_COMM_0,d0				; Get timecode
+	move.l	MCD_MAIN_COMM_0,d0				; Get parameters
 
 ; ------------------------------------------------------------------------------
 
 	xdef SeekCddaTime
 SeekCddaTime:
-	move.w	#MSCSEEKT,-(sp)					; Seek to CDDA time
-	bra.w	BasicBiosFunctionL
+	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+	
+	lea	XREF_bios_params.w,a0				; Seek to CDDA time
+	move.l	d0,(a0)
+	moveq	#MSCSEEKT,d0
+	jsr	_CDBIOS
+	
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------

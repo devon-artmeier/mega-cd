@@ -243,13 +243,44 @@ CopyPrgRamData:
 	rts
 
 ; ------------------------------------------------------------------------------
+; Send command to the Sub CPU
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Command ID
+; ------------------------------------------------------------------------------
+
+SubCpuCommand:
+	move	sr,-(sp)					; Save status register
+	move	#$2700,sr					; Disable interrupts
+
+	move.b	d0,MCD_MAIN_FLAG				; Set command ID
+	bsr.w	RequestSubCpuIrq2				; Request IRQ2
+
+.WaitSubAck:
+	cmpi.b	#"C",MCD_SUB_FLAG				; Has the Sub CPU acknowledged it?
+	bne.s	.WaitSubAck					; If not, wait
+	clr.b	MCD_MAIN_FLAG					; Reset command ID
+
+.WaitSubFinish:
+	tst.b	MCD_SUB_FLAG					; Has the Sub CPU finished?
+	bne.s	.WaitSubFinish					; If not, wait
+
+	move	(sp)+,sr					; Restore interrupts
+	rts
+
+; ------------------------------------------------------------------------------
 ; Initialize CD drive
 ; ------------------------------------------------------------------------------
 
 	xdef InitCdDrive
 InitCdDrive:
-	move.b	#1,-(sp)					; Initialize CD drive
-	bra.w	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#1,d0						; Initialize CD drive
+	bsr.s	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Open CD drive
@@ -257,8 +288,13 @@ InitCdDrive:
 
 	xdef OpenCdDrive
 OpenCdDrive:
-	move.b	#2,-(sp)					; Open CD drive
-	bra.w	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#2,d0						; Open CD drive
+	bsr.s	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Get CD drive status
@@ -269,9 +305,8 @@ OpenCdDrive:
 
 	xdef GetCdDriveStatus
 GetCdDriveStatus:
-	move.b	#3,-(sp)					; Get CD drive status
-	bsr.w	SubCpuCommand2
-	addq.w	#2,sp
+	moveq	#3,d0						; Get CD drive status
+	bsr.s	SubCpuCommand
 	move.w	MCD_SUB_COMM_0,d0
 	rts
 
@@ -284,13 +319,13 @@ GetCdDriveStatus:
 
 	xdef CheckCdDriveReady
 CheckCdDriveReady:
-	movem.w	d0-d1,-(sp)					; Save registers
+	move.l	d0,-(sp)					; Save registers
 
 	bsr.s	GetCdDriveStatus				; Get CD drive ready status
 	andi.w	#$F000,d0
 	eori	#4,sr
 
-	movem.w	(sp)+,d0-d1					; Restore registers
+	move.l	(sp)+,d0					; Restore registers
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -318,9 +353,14 @@ WaitCdDriveReady:
 
 	xdef PlayAllCdda
 PlayAllCdda:
-	move.w	d0,MCD_MAIN_COMM_0				; Play all CDDA tracks
-	move.b	#4,-(sp)
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	move.w	d0,MCD_MAIN_COMM_0				; Play all tracks
+	moveq	#4,d0
+	bsr.s	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Play CDDA track
@@ -331,9 +371,14 @@ PlayAllCdda:
 
 	xdef PlayCdda
 PlayCdda:
-	move.w	d0,MCD_MAIN_COMM_0				; Play CDDA track
-	move.b	#5,-(sp)
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	move.w	d0,MCD_MAIN_COMM_0				; Play track
+	moveq	#5,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Loop CDDA track
@@ -344,9 +389,14 @@ PlayCdda:
 
 	xdef LoopCdda
 LoopCdda:
-	move.w	d0,MCD_MAIN_COMM_0				; Loop CDDA track
-	move.b	#6,-(sp)
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	move.w	d0,MCD_MAIN_COMM_0				; Loop track
+	moveq	#6,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Play CDDA at time
@@ -357,9 +407,14 @@ LoopCdda:
 
 	xdef PlayCddaTime
 PlayCddaTime:
-	move.l	d0,MCD_MAIN_COMM_0				; Play CDDA at time
-	move.b	#7,-(sp)
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	move.l	d0,MCD_MAIN_COMM_0				; Play at time
+	moveq	#7,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Stop CDDA
@@ -367,8 +422,13 @@ PlayCddaTime:
 
 	xdef StopCdda
 StopCdda:
-	move.b	#8,-(sp)					; Stop CDDA
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#8,d0						; Stop CDDA
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Pause CDDA
@@ -376,8 +436,13 @@ StopCdda:
 
 	xdef PauseCdda
 PauseCdda:
-	move.b	#9,-(sp)					; Pause CDDA
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#9,d0						; Pause CDDA
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Unpause CDDA
@@ -385,8 +450,13 @@ PauseCdda:
 
 	xdef UnpauseCdda
 UnpauseCdda:
-	move.b	#$A,-(sp)					; Unpause CDDA
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#$A,d0						; Unpause CDDA
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Set CDDA speed
@@ -400,9 +470,13 @@ UnpauseCdda:
 
 	xdef SetCddaSpeed
 SetCddaSpeed:
-	move.w	d0,MCD_MAIN_COMM_0				; Set CDDA speed
-	move.b	#$B,-(sp)
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#$B,d0						; Set speed
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Seek to CDDA track
@@ -413,9 +487,14 @@ SetCddaSpeed:
 
 	xdef SeekCdda
 SeekCdda:
-	move.w	d0,MCD_MAIN_COMM_0				; Seek to CDDA track
-	move.b	#$C,-(sp)
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	move.w	d0,MCD_MAIN_COMM_0				; Seek to track
+	moveq	#$C,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Seek to CDDA time
@@ -426,9 +505,14 @@ SeekCdda:
 
 	xdef SeekCddaTime
 SeekCddaTime:
-	move.l	d0,MCD_MAIN_COMM_0				; Seek to CDDA time
-	move.b	#$D,-(sp)
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	move.l	d0,MCD_MAIN_COMM_0				; Seek to time
+	moveq	#$D,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Swap Word RAM banks
@@ -436,8 +520,13 @@ SeekCddaTime:
 
 	xdef SwapWordRamBanks
 SwapWordRamBanks:
-	move.b	#$E,-(sp)					; Swap banks
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#$E,d0						; Swap banks
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Access Word RAM bank 0
@@ -445,8 +534,13 @@ SwapWordRamBanks:
 
 	xdef SetWordRamBank0
 SetWordRamBank0:
-	move.b	#$F,-(sp)					; Access bank 0
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#$F,d0						; Access bank 0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Access Word RAM bank 1
@@ -454,8 +548,13 @@ SetWordRamBank0:
 
 	xdef SetWordRamBank1
 SetWordRamBank1:
-	move.b	#$10,-(sp)					; Access bank 1
-	bra.s	SubCpuCommand
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#$10,d0						; Access bank 1
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Unload Sub CPU module
@@ -463,40 +562,12 @@ SetWordRamBank1:
 
 	xdef UnloadSubCpuModule
 UnloadSubCpuModule:
-	move.b	#$11,-(sp)					; Unload module
-
-; ------------------------------------------------------------------------------
-; Send command to the Sub CPU
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	(sp).b - Command ID
-; ------------------------------------------------------------------------------
-
-SubCpuCommand:
-	move.b	(sp)+,MCD_MAIN_FLAG				; Set command ID
+	move.l	d0,-(sp)					; Save registers
 	
-WaitSubCpuCmd:
-	move	sr,-(sp)					; Save status register
-	move	#$2700,sr					; Disable interrupts
-	
-	bsr.w	RequestSubCpuIrq2				; Request IRQ2
+	move.b	#$11,d0						; Unload module
+	bsr.w	SubCpuCommand
 
-.WaitSubAck:
-	cmpi.b	#"C",MCD_SUB_FLAG				; Has the Sub CPU acknowledged it?
-	bne.s	.WaitSubAck					; If not, wait
-	clr.b	MCD_MAIN_FLAG					; Reset command ID
-
-.WaitSubFinish:
-	tst.b	MCD_SUB_FLAG					; Has the Sub CPU finished?
-	bne.s	.WaitSubFinish					; If not, wait
-
-	move	(sp)+,sr					; Restore interrupts
+	move.l	(sp)+,d0					; Restore registers
 	rts
-
-; ------------------------------------------------------------------------------
-
-SubCpuCommand2:
-	move.b	4(sp),MCD_MAIN_FLAG				; Set command ID
-	bra.s	WaitSubCpuCmd					; Process command
 
 ; ------------------------------------------------------------------------------
