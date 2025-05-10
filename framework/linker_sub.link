@@ -16,8 +16,4 @@ SECTIONS {
 		XREF_ProgramEnd    = .;
 		XREF_PRG_RAM_CLEAR = (0x80000-XREF_ProgramEnd)/0x20;
 	} > ram
-
-	bss (NOLOAD): {
-		*(bss);
-	} > ram
 }

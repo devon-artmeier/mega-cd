@@ -61,7 +61,7 @@ CheckSubCpuRun:
 	xdef CheckSubCpuReset
 CheckSubCpuReset:
 	bsr.s	CheckSubCpuRun					; Check if reset is held
-	eori	#4,sr
+	eori.w	#4,sr
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -126,7 +126,7 @@ ReleaseSubCpuBus:
 	xdef CheckWordRamBank0
 CheckWordRamBank0:
 	bsr.s	CheckWordRamBank1				; Check if we have access
-	eori	#4,sr
+	eori.w	#4,sr
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ CheckWordRam1M:
 	xdef CheckWordRam2M
 CheckWordRam2M:
 	bsr.s	CheckWordRam1M					; Check if we are in 2M mode
-	eori	#4,sr
+	eori.w	#4,sr
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -243,6 +243,52 @@ CopyPrgRamData:
 	rts
 
 ; ------------------------------------------------------------------------------
+; Get CD drive status
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	d0.w - CD drive status
+; ------------------------------------------------------------------------------
+
+	xdef GetCdDriveStatus
+GetCdDriveStatus:
+	move.w	MCD_SUB_COMM_14,d0				; Get CD drive status
+	rts
+
+; ------------------------------------------------------------------------------
+; Check if the CD drive is ready
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - Not ready/Ready
+; ------------------------------------------------------------------------------
+
+	xdef CheckCdDriveReady
+CheckCdDriveReady:
+	movem.l	d0-d1,-(sp)					; Save registers
+
+	bsr.s	GetCdDriveStatus				; Get CD drive ready status
+	andi.w	#$F000,d0
+	eori.w	#4,sr
+
+	movem.l	(sp)+,d0-d1					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Wait for the CD drive to be ready
+; ------------------------------------------------------------------------------
+
+	xdef WaitCdDriveReady
+WaitCdDriveReady:
+	move.w	sr,-(sp)					; Save status register
+	move.w	#$2700,sr					; Disable interrupts
+
+.Wait:
+	bsr.s	CheckCdDriveReady				; Is the CD drive ready?
+	beq.s	.Wait						; If not, wait
+
+	move.w	(sp)+,sr					; Restore interrupts
+	rts
+
+; ------------------------------------------------------------------------------
 ; Send command to the Sub CPU
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
@@ -250,8 +296,8 @@ CopyPrgRamData:
 ; ------------------------------------------------------------------------------
 
 SubCpuCommand:
-	move	sr,-(sp)					; Save status register
-	move	#$2700,sr					; Disable interrupts
+	move.w	sr,-(sp)					; Save status register
+	move.w	#$2700,sr					; Disable interrupts
 
 	move.b	d0,MCD_MAIN_FLAG				; Set command ID
 	bsr.w	RequestSubCpuIrq2				; Request IRQ2
@@ -265,7 +311,7 @@ SubCpuCommand:
 	tst.b	MCD_SUB_FLAG					; Has the Sub CPU finished?
 	bne.s	.WaitSubFinish					; If not, wait
 
-	move	(sp)+,sr					; Restore interrupts
+	move.w	(sp)+,sr					; Restore interrupts
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -297,54 +343,6 @@ OpenCdDrive:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Get CD drive status
-; ------------------------------------------------------------------------------
-; RETURNS:
-;	d0.w - CD drive status
-; ------------------------------------------------------------------------------
-
-	xdef GetCdDriveStatus
-GetCdDriveStatus:
-	moveq	#3,d0						; Get CD drive status
-	bsr.s	SubCpuCommand
-	move.w	MCD_SUB_COMM_0,d0
-	rts
-
-; ------------------------------------------------------------------------------
-; Check if the CD drive is ready
-; ------------------------------------------------------------------------------
-; RETURNS:
-;	eq/ne - Not ready/Ready
-; ------------------------------------------------------------------------------
-
-	xdef CheckCdDriveReady
-CheckCdDriveReady:
-	movem.l	d0-d1,-(sp)					; Save registers
-
-	bsr.s	GetCdDriveStatus				; Get CD drive ready status
-	andi.w	#$F000,d0
-	eori	#4,sr
-
-	movem.l	(sp)+,d0-d1					; Restore registers
-	rts
-
-; ------------------------------------------------------------------------------
-; Wait for the CD drive to be ready
-; ------------------------------------------------------------------------------
-
-	xdef WaitCdDriveReady
-WaitCdDriveReady:
-	move	sr,-(sp)					; Save status register
-	move	#$2700,sr					; Disable interrupts
-
-.Wait:
-	bsr.s	CheckCdDriveReady				; Is the CD drive ready?
-	beq.s	.Wait						; If not, wait
-
-	move	(sp)+,sr					; Restore interrupts
-	rts
-
-; ------------------------------------------------------------------------------
 ; Play all CDDA tracks
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
@@ -356,8 +354,8 @@ PlayAllCdda:
 	move.l	d0,-(sp)					; Save registers
 
 	move.w	d0,MCD_MAIN_COMM_0				; Play all tracks
-	moveq	#4,d0
-	bsr.s	SubCpuCommand
+	moveq	#3,d0
+	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
 	rts
@@ -374,7 +372,7 @@ PlayCdda:
 	move.l	d0,-(sp)					; Save registers
 
 	move.w	d0,MCD_MAIN_COMM_0				; Play track
-	moveq	#5,d0
+	moveq	#4,d0
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -392,7 +390,7 @@ LoopCdda:
 	move.l	d0,-(sp)					; Save registers
 
 	move.w	d0,MCD_MAIN_COMM_0				; Loop track
-	moveq	#6,d0
+	moveq	#5,d0
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -410,7 +408,7 @@ PlayCddaTime:
 	move.l	d0,-(sp)					; Save registers
 
 	move.l	d0,MCD_MAIN_COMM_0				; Play at time
-	moveq	#7,d0
+	moveq	#6,d0
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -424,7 +422,7 @@ PlayCddaTime:
 StopCdda:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#8,d0						; Stop CDDA
+	moveq	#7,d0						; Stop CDDA
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -438,7 +436,7 @@ StopCdda:
 PauseCdda:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#9,d0						; Pause CDDA
+	moveq	#8,d0						; Pause CDDA
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -452,7 +450,7 @@ PauseCdda:
 UnpauseCdda:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#$A,d0						; Unpause CDDA
+	moveq	#9,d0						; Unpause CDDA
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -472,7 +470,7 @@ UnpauseCdda:
 SetCddaSpeed:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#$B,d0						; Set speed
+	moveq	#$A,d0						; Set speed
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -490,7 +488,7 @@ SeekCdda:
 	move.l	d0,-(sp)					; Save registers
 
 	move.w	d0,MCD_MAIN_COMM_0				; Seek to track
-	moveq	#$C,d0
+	moveq	#$B,d0
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -508,7 +506,7 @@ SeekCddaTime:
 	move.l	d0,-(sp)					; Save registers
 
 	move.l	d0,MCD_MAIN_COMM_0				; Seek to time
-	moveq	#$D,d0
+	moveq	#$C,d0
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -522,7 +520,7 @@ SeekCddaTime:
 SwapWordRamBanks:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#$E,d0						; Swap banks
+	moveq	#$D,d0						; Swap banks
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -536,7 +534,7 @@ SwapWordRamBanks:
 SetWordRamBank0:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#$F,d0						; Access bank 0
+	moveq	#$E,d0						; Access bank 0
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -550,7 +548,21 @@ SetWordRamBank0:
 SetWordRamBank1:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#$10,d0						; Access bank 1
+	moveq	#$F,d0						; Access bank 1
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Run Sub CPU module
+; ------------------------------------------------------------------------------
+
+	xdef RunSubCpuModule
+RunSubCpuModule:
+	move.l	d0,-(sp)					; Save registers
+	
+	move.b	#$10,d0						; Run module
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers

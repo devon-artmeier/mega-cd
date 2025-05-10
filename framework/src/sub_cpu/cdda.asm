@@ -22,7 +22,7 @@
 ; Play all CDDA tracks
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0/$00.w - Starting track ID
+;	d0/Comm 0.w - Starting track ID
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_PlayAllCddaCmd
@@ -47,7 +47,7 @@ PlayAllCdda:
 ; Play CDDA track
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0/$00.w - Track ID
+;	d0/Comm 0.w - Track ID
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_PlayCddaCmd
@@ -72,7 +72,7 @@ PlayCdda:
 ; Loop CDDA track
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0/$00.w - Track ID
+;	d0/Comm 0.w - Track ID
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_LoopCddaCmd
@@ -97,7 +97,7 @@ LoopCdda:
 ; Play CDDA at time
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0/$00.l - Timecode
+;	d0/Comm 0.l - Timecode
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_PlayCddaTimeCmd
@@ -170,10 +170,10 @@ XREF_UnpauseCddaCmd:
 ; Set CDDA speed
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0/$00.w - Speed setting
-;	           0 - Normal
-;	           1 - Fast forward
-;	           2 - Fast reverse
+;	d0/Comm 0.w - Speed setting
+;	              0 - Normal
+;	              1 - Fast forward
+;	              2 - Fast reverse
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_SetCddaSpeedCmd
@@ -202,7 +202,7 @@ SetCddaSpeed:
 ; Seek to CDDA track
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0/$00.w - Track ID
+;	d0/Comm 0.w - Track ID
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_SeekCddaCmd
@@ -227,7 +227,7 @@ SeekCdda:
 ; Seek to CDDA time
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	$00.l - Timecode
+;	d0/Comm 0.l - Timecode
 ; ------------------------------------------------------------------------------
 
 	xdef XREF_SeekCddaTimeCmd

@@ -15,61 +15,58 @@
 ; ------------------------------------------------------------------------------
 
 	include	"mcd_sub.inc"
-
+	
 	section code
 
 ; ------------------------------------------------------------------------------
-; Initialize CD drive
-; ------------------------------------------------------------------------------
 
-	xdef InitCdDrive
-	xdef XREF_InitCdDriveCmd
-InitCdDrive:
-XREF_InitCdDriveCmd:
-	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
-
-	lea	XREF_bios_params.w,a0				; Initialize CD drive
-	move.w	#(1<<8)|$FF,(a0)
-	moveq	#DRVINIT,d0
-	jsr	_CDBIOS
-
-	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
-	rts
+	xdef MODULE_ENTRY
+MODULE_ENTRY		equ $10000				; Module start
 
 ; ------------------------------------------------------------------------------
-; Open CD drive
+; Run module
 ; ------------------------------------------------------------------------------
 
-	xdef OpenCdDrive
-	xdef XREF_OpenCdDriveCmd
-OpenCdDrive:
-XREF_OpenCdDriveCmd:
-	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
+	xdef RunModule
+RunModule:
+	tst.b	run_module					; Should we run the module?
+	beq.s	.End						; If not, branch
+	clr.b	run_module					; Mark module as run
 
-	moveq	#DRVOPEN,d0					; Open CD drive
-	jsr	_CDBIOS
-
-	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
-	rts
-
-; ------------------------------------------------------------------------------
-; Get CD drive status
-; ------------------------------------------------------------------------------
-; RETURNS:
-;	Comm 14.w - CD drive status
-; ------------------------------------------------------------------------------
-
-	xdef GetCdDriveStatus
-GetCdDriveStatus:
-	movem.l d0-d1/a0-a1,-(sp)				; Save registers
-	
-	move.w	#CDBSTAT,d0					; Get status
-	jsr	_CDBIOS
-	move.w	(a0),MCD_SUB_COMM_14
-	
-	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	jmp	MODULE_ENTRY					; Run module
 
 .End:
 	rts
+
+; ------------------------------------------------------------------------------
+; Set to run module
+; ------------------------------------------------------------------------------
+
+	xdef SetModuleRun
+	xdef XREF_SetModuleRunCmd
+
+SetModuleRun:
+XREF_SetModuleRunCmd:
+	st.b	run_module					; Set to run module
+	rts
+
+; ------------------------------------------------------------------------------
+; Unload module
+; ------------------------------------------------------------------------------
+
+	xdef UnloadModule
+	xdef XREF_UnloadModuleCmd
+UnloadModule:
+XREF_UnloadModuleCmd:
+	move.w	#$4E75,MODULE_ENTRY				; Unset module update function
+	rts
+
+; ------------------------------------------------------------------------------
+; Variables
+; ------------------------------------------------------------------------------
+	
+run_module:
+	dc.b 0							; Run module flag
+	even
 
 ; ------------------------------------------------------------------------------

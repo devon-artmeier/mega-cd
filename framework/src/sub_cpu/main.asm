@@ -19,10 +19,6 @@
 	section main
 
 ; ------------------------------------------------------------------------------
-
-MODULE_START		equ $10000				; Module start
-
-; ------------------------------------------------------------------------------
 ; Initialization
 ; ------------------------------------------------------------------------------
 
@@ -74,7 +70,8 @@ XREF_Main:
 	st	accept_commands					; Start accepting commands
 
 .MainLoop:
-	jsr	MODULE_START					; Update module
+	bsr.w	GetCdDriveStatus				; Get CD drive status
+	bsr.w	RunModule					; Run module
 	bra.s	.MainLoop					; Loop
 
 ; ------------------------------------------------------------------------------
@@ -84,13 +81,15 @@ XREF_Main:
 	xdef XREF_MegaDriveIrq
 XREF_MegaDriveIrq:
 	movem.l	d0-a6,-(sp)					; Save registers
-	
+	bsr.w	GetCdDriveStatus				; Get CD drive status
+
 	tst.b	accept_commands					; Are we accepting commands?
 	beq.s	.End						; If not, branch
+	clr.b	accept_commands					; Don't accept any more commands right now
 
 	moveq	#0,d0						; Has a command been sent?
 	move.b	MCD_MAIN_FLAG,d0
-	beq.s	.End						; If not, branch
+	beq.s	.NoCommand					; If not, branch
 
 	move.b	#"C",MCD_SUB_FLAG				; Acknowledge command
 
@@ -108,6 +107,9 @@ XREF_MegaDriveIrq:
 .FinishCommand:
 	clr.b	MCD_SUB_FLAG					; Mark as finished
 
+.NoCommand:
+	st	accept_commands					; Start accepting commands
+	
 .End:
 	movem.l	(sp)+,d0-a6					; Restore registers
 	rts
@@ -117,7 +119,6 @@ XREF_MegaDriveIrq:
 .Commands:
 	bra.w	XREF_InitCdDriveCmd				; Initialize CD drive
 	bra.w	XREF_OpenCdDriveCmd				; Open CD drive
-	bra.w	XREF_GetCdDriveStatusCmd			; Get CD drive status
 	bra.w	XREF_PlayAllCddaCmd				; Play all CDDA tracks
 	bra.w	XREF_PlayCddaCmd				; Play CDDA track
 	bra.w	XREF_LoopCddaCmd				; Loop CDDA track
@@ -131,7 +132,8 @@ XREF_MegaDriveIrq:
 	bra.w	XREF_SwapWordRamBanksCmd			; Swap Word RAM banks
 	bra.w	XREF_SetWordRamBank0Cmd				; Set Main CPU Word RAM bank 0
 	bra.w	XREF_SetWordRamBank1Cmd				; Set Main CPU Word RAM bank 1
-	bra.w	UnloadModuleCmd					; Unload module
+	bra.w	XREF_SetModuleRunCmd				; Run module
+	bra.w	XREF_UnloadModuleCmd				; Unload module
 .CommandsEnd:
 
 ; ------------------------------------------------------------------------------
@@ -143,24 +145,15 @@ XREF_UserCall3:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Unload module
-; ------------------------------------------------------------------------------
-
-UnloadModule:
-UnloadModuleCmd:
-	move.w	#$4E75,MODULE_START				; Unset module update function
-	rts
-
-; ------------------------------------------------------------------------------
 ; Variables
 ; ------------------------------------------------------------------------------
 
-	section bss
-
-accept_commands		ds.b 1					; Accepting commands flag
-			ds.b 1
+accept_commands:
+	dc.b	0							; Accept commands flag
+	even
 
 	xdef XREF_bios_params
-XREF_bios_params	ds.b 8					; BIOS parameters
+XREF_bios_params:
+	dcb.b	8, 0							; BIOS parameters
 
 ; ------------------------------------------------------------------------------

@@ -40,7 +40,7 @@ CheckWordRamBank0:
 	xdef CheckWordRamBank1
 CheckWordRamBank1:
 	bsr.s	CheckWordRamBank0				; Check if we have access
-	eori	#4,sr
+	eori.w	#4,sr
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -124,7 +124,7 @@ CheckWordRam1M:
 	xdef CheckWordRam2M
 CheckWordRam2M:
 	bsr.s	CheckWordRam1M					; Check if we are in 2M mode
-	eori	#4,sr
+	eori.w	#4,sr
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -189,6 +189,35 @@ SetWordRamOverwrite:
 SetWordRamUnderwrite:
 	bsr.s	DisableWordRamPriority				; Set overwrite
 	ori.b	#$10,MCD_MEM_MODE
+	rts
+	
+; ------------------------------------------------------------------------------
+; Check if the BIOS is handling commands
+; ------------------------------------------------------------------------------
+; RETURNS:
+;	eq/ne - No commands/Handling commands
+; ------------------------------------------------------------------------------
+
+	xdef CheckBiosFunction
+CheckBiosFunction:
+	movem.l d0-d1/a0-a1,-(sp)				; Save registers
+
+	move.w	#CDBCHK,d0					; Check BIOS function status
+	jsr	_CDBIOS
+	scc	d0
+	tst.b	d0
+
+	movem.l	(sp)+,d0-d1/a0-a1				; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Wait until a BIOS function is completed
+; ------------------------------------------------------------------------------
+
+	xdef WaitBiosFunction
+WaitBiosFunction:
+	bsr.s	CheckBiosFunction				; Check BIOS function status
+	bne.s	WaitBiosFunction				; If it's not done, branch
 	rts
 
 ; ------------------------------------------------------------------------------

@@ -297,11 +297,12 @@ UnpausePcm:
 ; Variables
 ; ------------------------------------------------------------------------------
 
-	section bss
-
-pcm_on_off		ds.b 1					; Channel on/off array
-			ds.b 1
-pcm_volumes		ds.b 8					; Volumes
-pcm_frequencies		ds.w 8					; Frequencies
+pcm_on_off:
+	dc.b	%11111111					; Channel on/off array
+	even
+pcm_volumes:
+	dcb.b	8, 0						; Volumes
+pcm_frequencies:
+	dcb.w	8, 0						; Frequencies
 
 ; ------------------------------------------------------------------------------
