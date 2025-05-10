@@ -106,9 +106,7 @@ XREF_MegaDriveIrq:
 	jsr	.Commands-4(pc,d0.w)
 
 .FinishCommand:
-	movem.l	(sp)+,d0-a6					; Restore registers
 	clr.b	MCD_SUB_FLAG					; Mark as finished
-	rts
 
 .End:
 	movem.l	(sp)+,d0-a6					; Restore registers
