@@ -87,7 +87,7 @@ WORD_RAM_1M_SIZE	equ $20000				; Word RAM size (1M/1M)
 ; PCM
 ; ------------------------------------------------------------------------------
 
-PCM_REGS		equ $FF0001				; PCM registers base
+PCM_REGS		equ $FF0001				; PCM registers
 PCM_VOLUME		equ $FF0001				; Volume
 PCM_PAN			equ $FF0003				; Pan
 PCM_FREQ_L		equ $FF0005				; Frequency (low)

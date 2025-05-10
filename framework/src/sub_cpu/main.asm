@@ -22,7 +22,7 @@
 ; Initialization
 ; ------------------------------------------------------------------------------
 
-	xdef INT_Initialize, INT_UserCall3
+	xdef INT_Initialize
 INT_Initialize:
 	bsr.w	SetWordRam2M					; Set Word RAM to 2M mode
 	bsr.w	DisableWordRamPriority				; Disable Word RAM priority
@@ -34,15 +34,15 @@ INT_Initialize:
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
 
-	lea	MCD_MAIN_FLAG-(MCD_SUB_COMMS+$10)(a0),a0	; Get communication flags
-	moveq	#"I",d1						; Initialization flag
-
-	move.b	d1,MCD_SUB_FLAG-MCD_MAIN_FLAG(a0)		; Mark as initializing
+	lea	MCD_SUB_FLAG-(MCD_SUB_COMMS+$10)(a0),a0		; Get communication flags
+	moveq	#"S",d1						; Mark as initializing
+	move.b	d1,(a0)
 
 .WaitMainAck:
-	cmp.b	(a0),d1						; Has the Main CPU acknowledged us?
+	cmp.b	MCD_MAIN_FLAG-MCD_SUB_FLAG(a0),d1		; Has the Main CPU acknowledged us?
 	bne.s	.WaitMainAck					; If not, wait
-
+	move.b	#"I",(a0)					; Acknowledge the Main CPU
+	
 	bsr.w	WaitWordRam					; Wait for Word RAM access
 
 	lea	INT_ProgramEnd(pc),a0				; Clear rest of RAM
@@ -54,8 +54,7 @@ INT_Initialize:
 	endr
 	dbf	d1,.ClearRam
 
-INT_UserCall3:
-	rts
+	bra.w	InitPcm						; Initialize PCM
 
 ; ------------------------------------------------------------------------------
 ; Main
@@ -123,6 +122,14 @@ INT_MegaDriveIrq:
 	movem.l	d0-a6,-(sp)					; Save registers
 	bsr.w	INT_UpdateModule				; Update module
 	movem.l	(sp)+,d0-a6					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; User call 3
+; ------------------------------------------------------------------------------
+
+	xdef INT_UserCall3
+INT_UserCall3:
 	rts
 
 ; ------------------------------------------------------------------------------
