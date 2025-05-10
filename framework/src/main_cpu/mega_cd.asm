@@ -319,13 +319,13 @@ GetCdDriveStatus:
 
 	xdef CheckCdDriveReady
 CheckCdDriveReady:
-	move.l	d0,-(sp)					; Save registers
+	movem.l	d0-d1,-(sp)					; Save registers
 
 	bsr.s	GetCdDriveStatus				; Get CD drive ready status
 	andi.w	#$F000,d0
 	eori	#4,sr
 
-	move.l	(sp)+,d0					; Restore registers
+	movem.l	(sp)+,d0-d1					; Restore registers
 	rts
 
 ; ------------------------------------------------------------------------------
