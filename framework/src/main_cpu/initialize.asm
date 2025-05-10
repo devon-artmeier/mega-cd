@@ -44,20 +44,20 @@ WaitSubCpuInit:
 	bne.s	.WaitSubInit					; If not, wait
 	move.b	d0,MCD_MAIN_FLAG-MCD_SUB_FLAG(a0)		; Acknowledge the Sub CPU
 
-.WaitSubAck:
+.WaitSubInitAck:
 	cmpi.b	#"I",(a0)					; Has the Sub CPU acknowledged us?
-	bne.s	.WaitSubAck					; If not, wait
+	bne.s	.WaitSubInitAck					; If not, wait
 
 	bsr.w	GiveWordRam					; Give Word RAM access to the Sub CPU
 	
 	clr.b	MCD_MAIN_FLAG-MCD_SUB_FLAG(a0)			; Mark as ready for commands
 
-.WaitSubAck2:
+.WaitSubAck:
 	if USE_MCD_MODE_1<>0
 		bsr.s	.RequestIrq2				; Request IRQ2
 	endif
 	tst.b	(a0)						; Has the Sub CPU started?
-	bne.s	.WaitSubAck2					; If not, wait
+	bne.s	.WaitSubAck					; If not, wait
 	
 	movem.l	(sp)+,d0-d1/a0					; Restore registers
 	rts

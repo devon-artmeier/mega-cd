@@ -24,7 +24,6 @@
 
 	xdef InitPcm
 InitPcm:
-	rts
 	movem.l	d0-d4/a0-a2,-(sp)				; Save registers
 
 	lea	PCM_REGS,a0					; Registers
