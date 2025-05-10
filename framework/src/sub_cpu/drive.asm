@@ -23,9 +23,9 @@
 ; ------------------------------------------------------------------------------
 
 	xdef InitCdDrive
-	xdef INT_InitCdDriveCmd
+	xdef XREF_InitCdDriveCmd
 InitCdDrive:
-INT_InitCdDriveCmd:
+XREF_InitCdDriveCmd:
 	move.w	#(1<<8)|$FF,d0					; Initialize CD drive
 	move.w	#DRVINIT,-(sp)
 	bra.w	BasicBiosFunctionW
@@ -35,9 +35,9 @@ INT_InitCdDriveCmd:
 ; ------------------------------------------------------------------------------
 
 	xdef OpenCdDrive
-	xdef INT_OpenCdDriveCmd
+	xdef XREF_OpenCdDriveCmd
 OpenCdDrive:
-INT_OpenCdDriveCmd:
+XREF_OpenCdDriveCmd:
 	move.w	#DRVOPEN,-(sp)					; Open CD drive
 	bra.w	BasicBiosFunction
 
@@ -48,8 +48,8 @@ INT_OpenCdDriveCmd:
 ;	d0.w - CD drive status
 ; ------------------------------------------------------------------------------
 
-	xdef INT_GetCdDriveStatusCmd
-INT_GetCdDriveStatusCmd:
+	xdef XREF_GetCdDriveStatusCmd
+XREF_GetCdDriveStatusCmd:
 	bsr.s	GetCdDriveStatus				; Get CD drive status
 	move.w	d0,MCD_SUB_COMM_0
 	rts

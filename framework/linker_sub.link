@@ -4,7 +4,7 @@ MEMORY {
 
 SECTIONS {
 	code: {
-		INT_ProgramStart = .;
+		XREF_ProgramStart = .;
 		*(header);
 		. = ALIGN(2);
 		*(main);
@@ -13,8 +13,8 @@ SECTIONS {
 		. = ALIGN(2);
 		*(data);
 		. = ALIGN(0x20);
-		INT_ProgramEnd    = .;
-		INT_PRG_RAM_CLEAR = (0x80000-INT_ProgramEnd)/0x20;
+		XREF_ProgramEnd    = .;
+		XREF_PRG_RAM_CLEAR = (0x80000-XREF_ProgramEnd)/0x20;
 	} > ram
 
 	bss (NOLOAD): {

@@ -19,11 +19,15 @@
 	section main
 
 ; ------------------------------------------------------------------------------
+
+MODULE_START		equ $10000				; Module start
+
+; ------------------------------------------------------------------------------
 ; Initialization
 ; ------------------------------------------------------------------------------
 
-	xdef INT_Initialize
-INT_Initialize:
+	xdef XREF_Initialize
+XREF_Initialize:
 	bsr.w	SetWordRam2M					; Set Word RAM to 2M mode
 	bsr.w	DisableWordRamPriority				; Disable Word RAM priority
 	
@@ -45,8 +49,8 @@ INT_Initialize:
 	
 	bsr.w	WaitWordRam					; Wait for Word RAM access
 
-	lea	INT_ProgramEnd(pc),a0				; Clear rest of RAM
-	move.w	#INT_PRG_RAM_CLEAR+(WORD_RAM_2M_SIZE/$20)-1,d1
+	lea	XREF_ProgramEnd(pc),a0				; Clear rest of RAM
+	move.w	#XREF_PRG_RAM_CLEAR+(WORD_RAM_2M_SIZE/$20)-1,d1
 
 .ClearRam:
 	rept $20/4
@@ -54,31 +58,45 @@ INT_Initialize:
 	endr
 	dbf	d1,.ClearRam
 
-	bra.w	InitPcm						; Initialize PCM
+	bsr.w	InitPcm						; Initialize PCM
+	bra.w	UnloadModule					; Unload module
 
 ; ------------------------------------------------------------------------------
 ; Main
 ; ------------------------------------------------------------------------------
 
-	xdef INT_Main
-INT_Main:
-	tst.b	MCD_MAIN_FLAG					; Is the Main CPU ready for commands?
-	bne.s	INT_Main					; If not, wait
+	xdef XREF_Main
+XREF_Main:
+	tst.b	MCD_MAIN_FLAG					; Has the Main CPU acknowledged us?
+	bne.s	XREF_Main					; If not, wait
 	clr.b	MCD_SUB_FLAG					; Acknowledge the Main CPU
 
-; ------------------------------------------------------------------------------
+	st	accept_commands					; Start accepting commands
 
 .MainLoop:
-	moveq	#0,d0						; Reset command ID
+	jsr	MODULE_START					; Update module
+	bra.s	.MainLoop					; Loop
 
-.WaitCommand:
-	move.b	MCD_MAIN_FLAG,d0				; Has a command been sent?
-	beq.s	.WaitCommand					; If not, wait
+; ------------------------------------------------------------------------------
+; Mega Drive interrupt (command handler)
+; ------------------------------------------------------------------------------
+
+	xdef XREF_MegaDriveIrq
+XREF_MegaDriveIrq:
+	movem.l	d0-a6,-(sp)					; Save registers
+
+	moveq	#0,d0						; Has a command been sent?
+	move.b	MCD_MAIN_FLAG,d0
+	beq.s	.End						; If not, branch
+
 	move.b	#"C",MCD_SUB_FLAG				; Acknowledge command
 
 .WaitMainAck:
 	tst.b	MCD_MAIN_FLAG					; Has the Main CPU acknowledged us?
 	bne.s	.WaitMainAck					; If so, branch
+	
+	tst.b	accept_commands					; Are we accepting commands?
+	beq.s	.FinishCommand					; If not, branch
 
 	cmpi.b	#(.CommandsEnd-.Commands)/4,d0			; Is it a valid command?
 	bcc.s	.FinishCommand					; If not, branch
@@ -89,47 +107,48 @@ INT_Main:
 
 .FinishCommand:
 	clr.b	MCD_SUB_FLAG					; Mark as finished
-	bra.s	.MainLoop					; Loop
+
+.End:
+	movem.l	(sp)+,d0-a6					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 
 .Commands:
-	bra.w	INT_InitCdDriveCmd				; Initialize CD drive
-	bra.w	INT_OpenCdDriveCmd				; Open CD drive
-	bra.w	INT_GetCdDriveStatusCmd				; Get CD drive status
-	bra.w	INT_PlayAllCddaCmd				; Play all CDDA tracks
-	bra.w	INT_PlayCddaCmd					; Play CDDA track
-	bra.w	INT_LoopCddaCmd					; Loop CDDA track
-	bra.w	INT_PlayCddaTimeCmd				; Play CDDA at time
-	bra.w	INT_StopCddaCmd					; Stop CDDA
-	bra.w	INT_PauseCddaCmd				; Pause CDDA
-	bra.w	INT_UnpauseCddaCmd				; Unpause CDDA
-	bra.w	INT_SetCddaSpeedCmd				; Set CDDA speed
-	bra.w	INT_SeekCddaCmd					; Seek to CDDA track
-	bra.w	INT_SeekCddaTimeCmd				; Seek to CDDA time
-	bra.w	INT_SwapWordRamBanksCmd				; Swap Word RAM banks
-	bra.w	INT_SetWordRamBank0Cmd				; Set Main CPU Word RAM bank 0
-	bra.w	INT_SetWordRamBank1Cmd				; Set Main CPU Word RAM bank 1
-	bra.w	INT_StartModuleCmd				; Start module
+	bra.w	XREF_InitCdDriveCmd				; Initialize CD drive
+	bra.w	XREF_OpenCdDriveCmd				; Open CD drive
+	bra.w	XREF_GetCdDriveStatusCmd			; Get CD drive status
+	bra.w	XREF_PlayAllCddaCmd				; Play all CDDA tracks
+	bra.w	XREF_PlayCddaCmd				; Play CDDA track
+	bra.w	XREF_LoopCddaCmd				; Loop CDDA track
+	bra.w	XREF_PlayCddaTimeCmd				; Play CDDA at time
+	bra.w	XREF_StopCddaCmd				; Stop CDDA
+	bra.w	XREF_PauseCddaCmd				; Pause CDDA
+	bra.w	XREF_UnpauseCddaCmd				; Unpause CDDA
+	bra.w	XREF_SetCddaSpeedCmd				; Set CDDA speed
+	bra.w	XREF_SeekCddaCmd				; Seek to CDDA track
+	bra.w	XREF_SeekCddaTimeCmd				; Seek to CDDA time
+	bra.w	XREF_SwapWordRamBanksCmd			; Swap Word RAM banks
+	bra.w	XREF_SetWordRamBank0Cmd				; Set Main CPU Word RAM bank 0
+	bra.w	XREF_SetWordRamBank1Cmd				; Set Main CPU Word RAM bank 1
+	bra.w	UnloadModuleCmd					; Unload module
 .CommandsEnd:
-
-; ------------------------------------------------------------------------------
-; Mega Drive interrupt
-; ------------------------------------------------------------------------------
-
-	xdef INT_MegaDriveIrq
-INT_MegaDriveIrq:
-	movem.l	d0-a6,-(sp)					; Save registers
-	bsr.w	INT_UpdateModule				; Update module
-	movem.l	(sp)+,d0-a6					; Restore registers
-	rts
 
 ; ------------------------------------------------------------------------------
 ; User call 3
 ; ------------------------------------------------------------------------------
 
-	xdef INT_UserCall3
-INT_UserCall3:
+	xdef XREF_UserCall3
+XREF_UserCall3:
+	rts
+
+; ------------------------------------------------------------------------------
+; Unload module
+; ------------------------------------------------------------------------------
+
+UnloadModule:
+UnloadModuleCmd:
+	move.w	#$4E75,MODULE_START				; Unset module update function
 	rts
 
 ; ------------------------------------------------------------------------------
@@ -138,7 +157,10 @@ INT_UserCall3:
 
 	section bss
 
-	xdef INT_bios_params
-INT_bios_params		ds.b 8					; BIOS parameters
+accept_commands		ds.b 1					; Accepting commands flag
+			ds.b 1
+
+	xdef XREF_bios_params
+XREF_bios_params		ds.b 8				; BIOS parameters
 
 ; ------------------------------------------------------------------------------

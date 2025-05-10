@@ -60,9 +60,9 @@ CheckWordRam:
 ; ------------------------------------------------------------------------------
 
 	xdef SwapWordRamBanks
-	xdef INT_SwapWordRamBanksCmd
+	xdef XREF_SwapWordRamBanksCmd
 SwapWordRamBanks:
-INT_SwapWordRamBanksCmd:
+XREF_SwapWordRamBanksCmd:
 	bsr.s	CheckWordRamBank0				; Do we have access to bank 0?
 	bne.s	SetWordRamBank1					; If so, branch
 
@@ -71,9 +71,9 @@ INT_SwapWordRamBanksCmd:
 ; ------------------------------------------------------------------------------
 
 	xdef SetWordRamBank0
-	xdef INT_SetWordRamBank1Cmd
+	xdef XREF_SetWordRamBank1Cmd
 SetWordRamBank0:
-INT_SetWordRamBank1Cmd:
+XREF_SetWordRamBank1Cmd:
 	bset	#0,MCD_MEM_MODE					; Access bank 0
 	rts
 
@@ -82,9 +82,9 @@ INT_SetWordRamBank1Cmd:
 ; ------------------------------------------------------------------------------
 
 	xdef SetWordRamBank1
-	xdef INT_SetWordRamBank0Cmd
+	xdef XREF_SetWordRamBank0Cmd
 SetWordRamBank1:
-INT_SetWordRamBank0Cmd:
+XREF_SetWordRamBank0Cmd:
 	bclr	#0,MCD_MEM_MODE					; Access bank 1
 	rts
 
@@ -175,6 +175,7 @@ DisableWordRamPriority:
 ; Set Word RAM priority to overwrite
 ; ------------------------------------------------------------------------------
 
+	xdef SetWordRamOverwrite
 SetWordRamOverwrite:
 	bsr.s	DisableWordRamPriority				; Set overwrite
 	ori.b	#8,MCD_MEM_MODE
@@ -184,6 +185,7 @@ SetWordRamOverwrite:
 ; Set Word RAM priority to underwrite
 ; ------------------------------------------------------------------------------
 
+	xdef SetWordRamUnderwrite
 SetWordRamUnderwrite:
 	bsr.s	DisableWordRamPriority				; Set overwrite
 	ori.b	#$10,MCD_MEM_MODE
@@ -219,7 +221,7 @@ BasicBiosFunction:
 BasicBiosFunctionW:
 	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
 
-	lea	INT_bios_params.w,a0				; Set parameter
+	lea	XREF_bios_params.w,a0				; Set parameter
 	move.w	d0,(a0)
 	move.w	$10(sp),d0					; Run BIOS function
 	jsr	_CDBIOS
@@ -240,7 +242,7 @@ BasicBiosFunctionW:
 BasicBiosFunctionL:
 	movem.l	d0-d1/a0-a1,-(sp)				; Save registers
 
-	lea	INT_bios_params.w,a0				; Set parameter
+	lea	XREF_bios_params.w,a0				; Set parameter
 	move.l	d0,(a0)
 	move.w	$10(sp),d0					; Run BIOS function
 	jsr	_CDBIOS

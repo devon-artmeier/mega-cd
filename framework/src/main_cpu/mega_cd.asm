@@ -458,12 +458,12 @@ SetWordRamBank1:
 	bra.s	SubCpuCommand
 
 ; ------------------------------------------------------------------------------
-; Start Sub CPU module
+; Unload Sub CPU module
 ; ------------------------------------------------------------------------------
 
-	xdef StartSubCpuModule
-StartSubCpuModule:
-	move.b	#$11,-(sp)					; Start module
+	xdef UnloadSubCpuModule
+UnloadSubCpuModule:
+	move.b	#$11,-(sp)					; Unload module
 
 ; ------------------------------------------------------------------------------
 ; Send command to the Sub CPU
@@ -479,6 +479,8 @@ WaitSubCpuCmd:
 	move	sr,-(sp)					; Save status register
 	move	#$2700,sr					; Disable interrupts
 	
+	bsr.w	RequestSubCpuIrq2				; Request IRQ2
+
 .WaitSubAck:
 	cmpi.b	#"C",MCD_SUB_FLAG				; Has the Sub CPU acknowledged it?
 	bne.s	.WaitSubAck					; If not, wait

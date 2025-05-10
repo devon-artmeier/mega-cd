@@ -47,10 +47,9 @@ WaitSubCpuInit:
 .WaitSubInitAck:
 	cmpi.b	#"I",(a0)					; Has the Sub CPU acknowledged us?
 	bne.s	.WaitSubInitAck					; If not, wait
+	clr.b	MCD_MAIN_FLAG-MCD_SUB_FLAG(a0)			; Acknowledge the Sub CPU
 
 	bsr.w	GiveWordRam					; Give Word RAM access to the Sub CPU
-	
-	clr.b	MCD_MAIN_FLAG-MCD_SUB_FLAG(a0)			; Mark as ready for commands
 
 .WaitSubAck:
 	if USE_MCD_MODE_1<>0

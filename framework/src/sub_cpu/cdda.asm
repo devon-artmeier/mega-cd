@@ -25,8 +25,8 @@
 ;	d0.w/$00.w - Starting track ID
 ; ------------------------------------------------------------------------------
 
-	xdef INT_PlayAllCddaCmd
-INT_PlayAllCddaCmd:
+	xdef XREF_PlayAllCddaCmd
+XREF_PlayAllCddaCmd:
 	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
 
 ; ------------------------------------------------------------------------------
@@ -43,8 +43,8 @@ PlayAllCdda:
 ;	$00.w - Track ID
 ; ------------------------------------------------------------------------------
 
-	xdef INT_PlayCddaCmd
-INT_PlayCddaCmd:
+	xdef XREF_PlayCddaCmd
+XREF_PlayCddaCmd:
 	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
 
 ; ------------------------------------------------------------------------------
@@ -61,8 +61,8 @@ PlayCdda:
 ;	$00.w - Track ID
 ; ------------------------------------------------------------------------------
 
-	xdef INT_LoopCddaCmd
-INT_LoopCddaCmd:
+	xdef XREF_LoopCddaCmd
+XREF_LoopCddaCmd:
 	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
 
 ; ------------------------------------------------------------------------------
@@ -79,8 +79,8 @@ LoopCdda:
 ;	$00.l - Timecode
 ; ------------------------------------------------------------------------------
 
-	xdef INT_PlayCddaTimeCmd
-INT_PlayCddaTimeCmd:
+	xdef XREF_PlayCddaTimeCmd
+XREF_PlayCddaTimeCmd:
 	move.l	MCD_MAIN_COMM_0,d0				; Get timecode
 
 ; ------------------------------------------------------------------------------
@@ -95,9 +95,9 @@ PlayCddaTime:
 ; ------------------------------------------------------------------------------
 
 	xdef StopCdda
-	xdef INT_StopCddaCmd
+	xdef XREF_StopCddaCmd
 StopCdda:
-INT_StopCddaCmd:
+XREF_StopCddaCmd:
 	move.w	#MSCSTOP,-(sp)					; Stop CDDA
 	bra.w	BasicBiosFunction
 
@@ -106,9 +106,9 @@ INT_StopCddaCmd:
 ; ------------------------------------------------------------------------------
 
 	xdef PauseCdda
-	xdef INT_PauseCddaCmd
+	xdef XREF_PauseCddaCmd
 PauseCdda:
-INT_PauseCddaCmd:
+XREF_PauseCddaCmd:
 	move.w	#MSCPAUSEON,-(sp)				; Pause CDDA
 	bra.w	BasicBiosFunction
 
@@ -117,9 +117,9 @@ INT_PauseCddaCmd:
 ; ------------------------------------------------------------------------------
 
 	xdef UnpauseCdda
-	xdef INT_UnpauseCddaCmd
+	xdef XREF_UnpauseCddaCmd
 UnpauseCdda:
-INT_UnpauseCddaCmd:
+XREF_UnpauseCddaCmd:
 	move.w	#MSCPAUSEOFF,-(sp)				; Unpause CDDA
 	bra.w	BasicBiosFunction
 
@@ -133,8 +133,8 @@ INT_UnpauseCddaCmd:
 ;	        2 - Fast reverse
 ; ------------------------------------------------------------------------------
 
-	xdef INT_SetCddaSpeedCmd
-INT_SetCddaSpeedCmd:
+	xdef XREF_SetCddaSpeedCmd
+XREF_SetCddaSpeedCmd:
 	move.w	MCD_MAIN_COMM_0,d0				; Get speed setting
 
 ; ------------------------------------------------------------------------------
@@ -162,8 +162,8 @@ SetCddaSpeed:
 ;	$00.w - Track ID
 ; ------------------------------------------------------------------------------
 
-	xdef INT_SeekCddaCmd
-INT_SeekCddaCmd:
+	xdef XREF_SeekCddaCmd
+XREF_SeekCddaCmd:
 	move.w	MCD_MAIN_COMM_0,d0				; Get track ID
 
 ; ------------------------------------------------------------------------------
@@ -180,8 +180,8 @@ SeekCdda:
 ;	$00.l - Timecode
 ; ------------------------------------------------------------------------------
 
-	xdef INT_SeekCddaTimeCmd
-INT_SeekCddaTimeCmd:
+	xdef XREF_SeekCddaTimeCmd
+XREF_SeekCddaTimeCmd:
 	move.l	MCD_MAIN_COMM_0,d0				; Get timecode
 
 ; ------------------------------------------------------------------------------

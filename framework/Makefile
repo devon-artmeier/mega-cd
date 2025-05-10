@@ -22,7 +22,7 @@ OUT_PATH_EXISTS      := $(wildcard $(OUT_PATH))
 VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH)
 VLINK_FLAGS          := $(VLINK_FLAGS) -symctrl=4
 MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH)
-DUMPASMSYM_FLAGS     := $(DUMPASMSYM_FLAGS) -xp INT_
+DUMPASMSYM_FLAGS     := $(DUMPASMSYM_FLAGS) -xp XREF_
 
 # ------------------------------------------------------------------------------
 # Main CPU functions files
