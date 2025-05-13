@@ -121,6 +121,16 @@ XREF_MegaDriveIrq:
 	bra.w	XREF_SetCddaSpeedCmd				; Set CDDA speed
 	bra.w	XREF_SeekCddaCmd				; Seek to CDDA track
 	bra.w	XREF_SeekCddaTimeCmd				; Seek to CDDA time
+	bra.w	XREF_InitPcmCmd					; Initialize PCM
+	bra.w	XREF_SetPcmVolumeCmd				; Set PCM channel volume
+	bra.w	XREF_SetPcmPanningCmd				; Set PCM channel panning
+	bra.w	XREF_SetPcmFrequencyCmd				; Set PCM channel frequency
+	bra.w	XREF_SetPcmWaveStartCmd				; Set PCM channel Wave RAM start address
+	bra.w	XREF_SetPcmWaveLoopCmd				; Set PCM channel Wave RAM loop address
+	bra.w	XREF_PlayPcmCmd					; Play PCM channels
+	bra.w	XREF_StopPcmCmd					; Stop PCM channels
+	bra.w	XREF_PausePcmCmd				; Pause PCM channels
+	bra.w	XREF_UnpausePcmCmd				; Unpause PCM channels
 	bra.w	XREF_SwapWordRamBanksCmd			; Swap Word RAM banks
 	bra.w	XREF_SetWordRamBank0Cmd				; Set Main CPU Word RAM bank 0
 	bra.w	XREF_SetWordRamBank1Cmd				; Set Main CPU Word RAM bank 1

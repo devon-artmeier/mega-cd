@@ -594,6 +594,192 @@ SeekCddaTime:
 	rts
 
 ; ------------------------------------------------------------------------------
+; Initialize PCM
+; ------------------------------------------------------------------------------
+
+	xdef InitPcm
+InitPcm:
+	move.l	d0,-(sp)					; Save registers
+
+	moveq	#$D,d0						; Initialize PCM
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Set PCM channel volume
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID
+;	d1.b - Volume
+; ------------------------------------------------------------------------------
+
+	xdef SetPcmVolume	
+SetPcmVolume:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Set PCM channel volune
+	move.b	d1,MCD_MAIN_COMM_1
+	moveq	#$E,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Set PCM channel panning
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID
+;	d1.b - Panning
+; ------------------------------------------------------------------------------
+	
+	xdef SetPcmPanning
+SetPcmPanning:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Set PCM channel panning
+	move.b	d1,MCD_MAIN_COMM_1
+	moveq	#$F,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Set PCM channel frequency
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID
+;	d1.w - Frequency
+; ------------------------------------------------------------------------------
+	
+	xdef SetPcmFrequency
+SetPcmFrequency:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Set PCM channel frequency
+	move.w	d1,MCD_MAIN_COMM_2
+	moveq	#$10,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Set PCM channel Wave RAM start address
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID
+;	d1.b - Start address
+; ------------------------------------------------------------------------------
+	
+	xdef SetPcmWaveStart
+SetPcmWaveStart:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Set PCM channel Wave RAM start address
+	move.b	d1,MCD_MAIN_COMM_1
+	moveq	#$11,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Set PCM channel Wave RAM loop address
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID
+;	d1.w - Loop address
+; ------------------------------------------------------------------------------
+	
+	xdef SetPcmWaveLoop
+SetPcmWaveLoop:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Set PCM channel Wave RAM loop address
+	move.w	d1,MCD_MAIN_COMM_2
+	moveq	#$12,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Play PCM channels
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID bit array
+; ------------------------------------------------------------------------------
+	
+	xdef PlayPcm
+PlayPcm:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Play PCM channel
+	moveq	#$13,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+	
+; ------------------------------------------------------------------------------
+; Stop PCM channels
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID bit array
+; ------------------------------------------------------------------------------
+	
+	xdef StopPcm
+StopPcm:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Stop PCM channel
+	moveq	#$14,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Pause PCM channels
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID bit array
+; ------------------------------------------------------------------------------
+	
+	xdef PausePcm
+PausePcm:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Pause PCM channel
+	moveq	#$15,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
+; Unpause PCM channels
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	d0.b - Channel ID bit array
+; ------------------------------------------------------------------------------
+	
+	xdef UnpausePcm
+UnpausePcm:
+	move.l	d0,-(sp)					; Save registers
+
+	move.b	d0,MCD_MAIN_COMM_0				; Unpause PCM channel
+	moveq	#$16,d0
+	bsr.w	SubCpuCommand
+
+	move.l	(sp)+,d0					; Restore registers
+	rts
+
+; ------------------------------------------------------------------------------
 ; Swap Word RAM banks
 ; ------------------------------------------------------------------------------
 
@@ -601,7 +787,7 @@ SeekCddaTime:
 SwapWordRamBanks:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#$D,d0						; Swap banks
+	moveq	#$17,d0						; Swap banks
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -615,7 +801,7 @@ SwapWordRamBanks:
 SetWordRamBank0:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#$E,d0						; Access bank 0
+	moveq	#$18,d0						; Access bank 0
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -629,7 +815,7 @@ SetWordRamBank0:
 SetWordRamBank1:
 	move.l	d0,-(sp)					; Save registers
 
-	moveq	#$F,d0						; Access bank 1
+	moveq	#$19,d0						; Access bank 1
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -643,7 +829,7 @@ SetWordRamBank1:
 RunSubCpuModule:
 	move.l	d0,-(sp)					; Save registers
 	
-	move.b	#$10,d0						; Run module
+	move.b	#$1A,d0						; Run module
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers
@@ -657,7 +843,7 @@ RunSubCpuModule:
 UnloadSubCpuModule:
 	move.l	d0,-(sp)					; Save registers
 	
-	move.b	#$11,d0						; Unload module
+	move.b	#$1B,d0						; Unload module
 	bsr.w	SubCpuCommand
 
 	move.l	(sp)+,d0					; Restore registers

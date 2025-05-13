@@ -19,11 +19,25 @@
 	section code
 
 ; ------------------------------------------------------------------------------
+; Delay a bit to let the PCM chip process
+; ------------------------------------------------------------------------------
+; PARAMETERS:
+;	\1 - Data register
+; ------------------------------------------------------------------------------
+
+pcmDelay macro
+	moveq	#$20-1,\1
+	dbf	\1,*
+	endm
+
+; ------------------------------------------------------------------------------
 ; Initialize PCM
 ; ------------------------------------------------------------------------------
 
 	xdef InitPcm
+	xdef XREF_InitPcmCmd
 InitPcm:
+XREF_InitPcmCmd:
 	movem.l	d0-d4/a0-a2,-(sp)				; Save registers
 
 	lea	PCM_REGS,a0					; Registers
@@ -54,7 +68,7 @@ InitPcm:
 	lea	pcm_volumes.w,a1				; Volumes
 	lea	pcm_frequencies.w,a2				; Frequencies
 
-	moveq	#$FFFFFFC0,d2					; Initial PCM channel
+	moveq	#$FFFFFFC0,d2					; Initial channel selection
 	moveq	#8-1,d3						; Number of channels
 
 .InitChannels:
@@ -86,212 +100,290 @@ InitPcm:
 	rts
 
 ; ------------------------------------------------------------------------------
-; Set channel ID (fast)
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	d0.w - Channel ID
-; ------------------------------------------------------------------------------
-
-	xdef SetPcmChannelFast
-SetPcmChannelFast:
-	move.w	d0,-(sp)					; Set channel
-	ori.b	#$C0,d0
-	move.b	d0,PCM_CTRL
-	move.w	(sp)+,d0
-	rts
-
-; ------------------------------------------------------------------------------
-; Set channel ID
-; ------------------------------------------------------------------------------
-; PARAMETERS:
-;	d0.w - Channel ID
-; ------------------------------------------------------------------------------
-
-	xdef SetPcmChannel
-SetPcmChannel:
-	bsr.s	SetPcmChannelFast				; Set channel
-
-; ------------------------------------------------------------------------------
-; Handle PCM register delay
-; ------------------------------------------------------------------------------
-
-	xdef PcmDelay
-PcmDelay:
-	move.w	d0,-(sp)					; Delay for a bit
-	move.w	#$80-1,d0
-	dbf	d0,*
-	move.w	(sp)+,d0
-	rts
-
-; ------------------------------------------------------------------------------
 ; Set PCM channel volume
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
+;	d0.b - Channel ID
 ;	d1.b - Volume
+; ------------------------------------------------------------------------------
+
+	xdef XREF_SetPcmVolumeCmd
+XREF_SetPcmVolumeCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+	move.b	MCD_MAIN_COMM_1,d1
+
 ; ------------------------------------------------------------------------------
 
 	xdef SetPcmVolume
 SetPcmVolume:
-	bsr.s	SetPcmChannelFast				; Set channel
+	movem.l	d0/a0,-(sp)					; Save registers
 	
-	move.l	a0,-(sp)					; Save volume
-	lea	pcm_volumes.w,a0
+	ori.b	#$C0,d0						; Set channel
+	move.b	d0,PCM_CTRL
+	
+	lea	pcm_volumes.w,a0				; Set volume
+	andi.w	#7,d0
 	move.b	d1,(a0,d0.w)
-	move.l	(sp)+,a0
+	move.b	d1,PCM_VOLUME
+	pcmDelay d0
 	
-	move.b	d1,PCM_VOLUME					; Set volume
-	bra.s	PcmDelay
+	movem.l	(sp)+,d0/a0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Set PCM channel panning
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
+;	d0.b - Channel ID
 ;	d1.b - Panning
+; ------------------------------------------------------------------------------
+
+	xdef XREF_SetPcmPanningCmd
+XREF_SetPcmPanningCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+	move.b	MCD_MAIN_COMM_1,d1
+
 ; ------------------------------------------------------------------------------
 
 	xdef SetPcmPanning
 SetPcmPanning:
-	bsr.s	SetPcmChannelFast				; Set channel
+	move.l	d0,-(sp)					; Save registers
+	
+	ori.b	#$C0,d0						; Set channel
+	move.b	d0,PCM_CTRL
 
 	move.b	d1,PCM_PAN					; Set panning
-	bra.s	PcmDelay
+	pcmDelay d0
+	
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Set PCM channel frequency
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
+;	d0.b - Channel ID
 ;	d1.w - Frequency
+; ------------------------------------------------------------------------------
+
+	xdef XREF_SetPcmFrequencyCmd
+XREF_SetPcmFrequencyCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+	move.w	MCD_MAIN_COMM_2,d1
+
 ; ------------------------------------------------------------------------------
 
 	xdef SetPcmFrequency
 SetPcmFrequency:
-	bsr.s	SetPcmChannelFast				; Set channel
+	movem.l	d0/a0,-(sp)					; Save registers
+	
+	ori.b	#$C0,d0						; Set channel
+	move.b	d0,PCM_CTRL
 
-	movem.l	d0/a0,-(sp)					; Save frequency
-	lea	pcm_frequencies.w,a0
+	lea	pcm_frequencies.w,a0				; Set frequency
+	andi.w	#7,d0
 	add.w	d0,d0
 	move.w	d1,(a0,d0.w)
-	movem.l	(sp)+,d0/a0
-	
-	move.b	d1,PCM_FREQ_L					; Set frequency
+	move.b	d1,PCM_FREQ_L
 	move.w	d1,-(sp)
 	move.b	(sp)+,PCM_FREQ_H
-	bra.s	PcmDelay
+	pcmDelay d0
+	
+	movem.l	(sp)+,d0/a0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
-; Set PCM Wave RAM start address
+; Set PCM channel Wave RAM start address
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
+;	d0.b - Channel ID
 ;	d1.b - Start address
+; ------------------------------------------------------------------------------
+
+	xdef XREF_SetPcmWaveStartCmd
+XREF_SetPcmWaveStartCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+	move.b	MCD_MAIN_COMM_1,d1
+
 ; ------------------------------------------------------------------------------
 
 	xdef SetPcmWaveStart
 SetPcmWaveStart:
-	bsr.s	SetPcmChannelFast				; Set channel
+	move.l	d0,-(sp)					; Save registers
+	
+	ori.b	#$C0,d0						; Set channel
+	move.b	d0,PCM_CTRL
 
 	move.b	d1,PCM_START					; Set start address
-	bra.s	PcmDelay
+	pcmDelay d0
+	
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
-; Set PCM Wave RAM loop address
+; Set PCM channel Wave RAM loop address
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
-;	d1.b - Start address
+;	d0.b - Channel ID
+;	d1.w - Loop address
+; ------------------------------------------------------------------------------
+
+	xdef XREF_SetPcmWaveLoopCmd
+XREF_SetPcmWaveLoopCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+	move.w	MCD_MAIN_COMM_2,d1
+
 ; ------------------------------------------------------------------------------
 
 	xdef SetPcmWaveLoop
 SetPcmWaveLoop:
-	bsr.s	SetPcmChannelFast				; Set channel
+	move.l	d0,-(sp)					; Save registers
+	
+	ori.b	#$C0,d0						; Set channel
+	move.b	d0,PCM_CTRL
 	
 	move.b	d1,PCM_LOOP_L					; Set loop address
 	move.w	d1,-(sp)
 	move.b	(sp)+,PCM_LOOP_H
-	bra.s	PcmDelay
+	pcmDelay d0
+	
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
-; Play PCM channel
+; Play PCM channels
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
+;	d0.b - Channel ID bit array
+; ------------------------------------------------------------------------------
+
+	xdef XREF_PlayPcmCmd
+XREF_PlayPcmCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+
 ; ------------------------------------------------------------------------------
 
 	xdef PlayPcm
 PlayPcm:
-	bsr.s	StopPcm						; Stop channel
-
-	bclr	d0,pcm_on_off					; Play channel
+	movem.l	d0-d1,-(sp)					; Save registers
+	
+	or.b	d0,pcm_on_off.w					; Stop channels
 	move.b	pcm_on_off.w,PCM_ENABLE
-	bra.w	PcmDelay
+	pcmDelay d1
+	
+	not.b	d0						; Play channels
+	and.b	d0,pcm_on_off.w
+	pcmDelay d1
+	
+	movem.l	(sp)+,d0-d1					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
-; Stop PCM channel
+; Stop PCM channels
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
+;	d0.b - Channel ID bit array
+; ------------------------------------------------------------------------------
+
+	xdef XREF_StopPcmCmd
+XREF_StopPcmCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+
 ; ------------------------------------------------------------------------------
 
 	xdef StopPcm
 StopPcm:
-	bset	d0,pcm_on_off.w					; Stop channel
+	move.l	d0,-(sp)					; Save registers
+	
+	or.b	d0,pcm_on_off.w					; Stop channels
 	move.b	pcm_on_off.w,PCM_ENABLE
-	bra.w	PcmDelay
+	pcmDelay d0
+	
+	move.l	(sp)+,d0					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
-; Stop all PCM channels
-; ------------------------------------------------------------------------------
-
-	xdef StopAllPcm
-StopAllPcm:
-	st	pcm_on_off.w					; Stop all channels
-	move.b	pcm_on_off.w,PCM_ENABLE
-	bra.w	PcmDelay
-
-; ------------------------------------------------------------------------------
-; Pause PCM channel
+; Pause PCM channels
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
+;	d0.b - Channel ID bit array
+; ------------------------------------------------------------------------------
+
+	xdef XREF_PausePcmCmd
+XREF_PausePcmCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+
 ; ------------------------------------------------------------------------------
 
 	xdef PausePcm
 PausePcm:
-	bsr.w	SetPcmChannelFast				; Set channel
+	movem.l	d0-d4,-(sp)					; Save registers
+	
+	moveq	#$FFFFFFC0,d1					; Initial channel selection
+	moveq	#8-1,d2						; Number of channels
+	moveq	#0,d3						; Zero
+	
+.PauseLoop:
+	lsr.b	#1,d0						; Is this channel selected?
+	bcc.s	.NextChannel					; If not, branch	
 
-	move.l	d0,-(sp)					; Pause channel
-	moveq	#0,d0
-	move.b	d0,PCM_VOLUME
-	move.b	d0,PCM_FREQ_L
-	move.b	d0,PCM_FREQ_H
-	move.l	(sp)+,d0
-	bra.w	PcmDelay
+	move.b	d1,PCM_CTRL					; Set channel
+	
+	move.b	d3,PCM_VOLUME					; Pause channel
+	move.b	d3,PCM_FREQ_L
+	move.b	d3,PCM_FREQ_H
+	pcmDelay d4
+
+.NextChannel:
+	addq.b	#1,d1						; Next channel
+	dbf	d2,.PauseLoop					; Loop until finished
+
+	movem.l	(sp)+,d0-d4					; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
-; Unpause PCM channel
+; Unpause PCM channels
 ; ------------------------------------------------------------------------------
 ; PARAMETERS:
-;	d0.w - Channel ID
+;	d0.b - Channel ID bit array
+; ------------------------------------------------------------------------------
+
+	xdef XREF_UnpausePcmCmd
+XREF_UnpausePcmCmd:
+	move.b	MCD_MAIN_COMM_0,d0				; Get parameters
+
 ; ------------------------------------------------------------------------------
 
 	xdef UnpausePcm
 UnpausePcm:
-	bsr.w	SetPcmChannelFast				; Set channel
+	movem.l	d0-d3/a0-a1,-(sp)				; Save registers
+	
+	moveq	#$FFFFFFC0,d1					; Initial channel selection
+	moveq	#8-1,d2						; Number of channels
+	
+	lea	pcm_volumes.w,a0				; Volumes
+	lea	pcm_frequencies.w,a1				; Frequencies
+	
+.UnpauseLoop:
+	lsr.b	#1,d0						; Is this channel selected?
+	bcc.s	.NextChannel					; If not, branch	
 
-	lea	pcm_volumes.w,a0				; Restore volume
-	move.b	(a0,d0.w),PCM_VOLUME
-	bsr.w	PcmDelay
+	move.b	d1,PCM_CTRL					; Set channel
+	
+	move.b	(a0),PCM_VOLUME					; Restore volume
 
-	movem.l	d0/a0,-(sp)					; Restore frequency
-	lea	pcm_frequencies.w,a0
-	add.w	d0,d0
-	move.b	1(a0,d0.w),PCM_FREQ_L
-	move.b	(a0,d0.w),PCM_FREQ_H
-	movem.l	(sp)+,d0/a0
-	bra.w	PcmDelay
+	move.b	1(a1),PCM_FREQ_L				; Restore frequency
+	move.b	(a1),PCM_FREQ_H
+	pcmDelay d3
+
+.NextChannel:
+	addq.b	#1,d1						; Next channel
+	addq.w	#1,a0
+	addq.w	#2,a1
+	dbf	d2,.UnpauseLoop					; Loop until finished
+
+	movem.l	(sp)+,d0-d3/a0-a1				; Restore registers
+	rts
 
 ; ------------------------------------------------------------------------------
 ; Variables
