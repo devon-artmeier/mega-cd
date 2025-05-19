@@ -21,15 +21,6 @@ BUILD_PATH_MAIN_CD   := $(BUILD_PATH_MAIN)/cd
 BUILD_PATH_SUB       := $(subst $(SRC_PATH),$(BUILD_PATH),$(SRC_PATH_SUB))
 
 # ------------------------------------------------------------------------------
-# Tool flags
-# ------------------------------------------------------------------------------
-
-VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH)
-VLINK_FLAGS          := $(VLINK_FLAGS) -symctrl=4
-MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH)
-DUMPASMSYM_FLAGS     := $(DUMPASMSYM_FLAGS) -xp XREF_
-
-# ------------------------------------------------------------------------------
 # Main CPU functions files
 # ------------------------------------------------------------------------------
 
@@ -58,6 +49,15 @@ OUT_SUB              := $(OUT_PATH)/mcd_framework_sub.bin
 SYM_SUB              := $(patsubst $(OUT_PATH)/%.bin,$(BUILD_PATH)/%.sym,$(OUT_SUB))
 EXPORT_SUB           := $(patsubst %.bin,%.inc,$(OUT_SUB))
 LINKER_SUB           := linker_sub.link
+
+# ------------------------------------------------------------------------------
+# Tool flags
+# ------------------------------------------------------------------------------
+
+VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH)
+VLINK_FLAGS          := $(VLINK_FLAGS) -symctrl=4
+MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH)
+DUMPASMSYM_FLAGS     := $(DUMPASMSYM_FLAGS) -xp XREF_
 
 # ------------------------------------------------------------------------------
 # Reserved rules
