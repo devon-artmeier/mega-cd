@@ -28,7 +28,7 @@ OUT                  := $(OUT_PATH)/mcd_cart_test.gen
 # Tool flags
 # ------------------------------------------------------------------------------
 
-VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH) -I$(FRAMEWORK_PATH)
+VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH) -I$(FRAMEWORK_PATH) -DUSE_MCD_MODE_1=1
 VLINK_FLAGS          := $(VLINK_FLAGS) -T linker.link
 MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH) -i $(FRAMEWORK_PATH)
 
@@ -64,7 +64,7 @@ $(OUT): $(OBJ) | $(OUT_PATH)
 
 $(OBJ): $(BUILD_PATH)/%.o: $(SRC_PATH)/%.asm | $(BUILD_PATH) $(DEPEND)
 	$(ASSEMBLE_MSG)
-	@$(VASM) $(VASM_FLAGS) -DUSE_MCD_MODE_1=1 -L $(patsubst %.o,%.lst,$@) -o $@ $<
+	@$(VASM) $(VASM_FLAGS) -L $(patsubst %.o,%.lst,$@) -o $@ $<
 
 $(DEPEND): $(BUILD_PATH)/%.d: $(SRC_PATH)/%.asm | $(BUILD_PATH)
 	$(DEPEND_MSG)
