@@ -24,6 +24,7 @@ VASM_FLAGS           := -Fvobj -quiet -ldots -spaces -nowarn=62
 VLINK_FLAGS          := -b rawbin
 MKASMDEP_FLAGS       := -r
 DUMPASMSYM_FLAGS     := -m asm
+MDROMFIX_FLAGS       := -q
 
 # ------------------------------------------------------------------------------
 # Messages

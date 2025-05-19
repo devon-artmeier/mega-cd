@@ -9,11 +9,16 @@ include common.mk
 # ------------------------------------------------------------------------------
 
 OUT_PATH             := out
+OUT_PATH_EXISTS      := $(wildcard $(OUT_PATH))
 SRC_PATH             := src
+SRC_PATH_MAIN        := $(SRC_PATH)/main_cpu
+SRC_PATH_SUB         := $(SRC_PATH)/sub_cpu
 INCLUDE_PATH         := include
 BUILD_PATH           := $(OUT_PATH)/build
-
-OUT_PATH_EXISTS      := $(wildcard $(OUT_PATH))
+BUILD_PATH_MAIN      := $(subst $(SRC_PATH),$(BUILD_PATH),$(SRC_PATH_MAIN))
+BUILD_PATH_MAIN_CART := $(BUILD_PATH_MAIN)/cart
+BUILD_PATH_MAIN_CD   := $(BUILD_PATH_MAIN)/cd
+BUILD_PATH_SUB       := $(subst $(SRC_PATH),$(BUILD_PATH),$(SRC_PATH_SUB))
 
 # ------------------------------------------------------------------------------
 # Tool flags
@@ -28,25 +33,17 @@ DUMPASMSYM_FLAGS     := $(DUMPASMSYM_FLAGS) -xp XREF_
 # Main CPU functions files
 # ------------------------------------------------------------------------------
 
-SRC_PATH_MAIN        := $(SRC_PATH)/main_cpu
-BUILD_PATH_MAIN      := $(subst $(SRC_PATH),$(BUILD_PATH),$(SRC_PATH_MAIN))
-BUILD_PATH_MAIN_CART := $(BUILD_PATH_MAIN)/cart
-BUILD_PATH_MAIN_CD   := $(BUILD_PATH_MAIN)/cd
-
 SRC_MAIN             := $(wildcard $(SRC_PATH_MAIN)/*.asm)
 OBJ_MAIN_CART        := $(patsubst $(SRC_PATH_MAIN)/%.asm,$(BUILD_PATH_MAIN_CART)/%.o,$(SRC_MAIN))
 OBJ_MAIN_CD          := $(patsubst $(SRC_PATH_MAIN)/%.asm,$(BUILD_PATH_MAIN_CD)/%.o,$(SRC_MAIN))
 DEPEND_MAIN_CART     := $(patsubst %.o,%.d,$(OBJ_MAIN_CART))
 DEPEND_MAIN_CD       := $(patsubst %.o,%.d,$(OBJ_MAIN_CD))
-
 OUT_MAIN_CART        := $(OUT_PATH)/mcd_framework_main_cart.bin
-SYM_MAIN_CART        := $(patsubst $(OUT_PATH)/%.bin,$(BUILD_PATH)/%.sym,$(OUT_MAIN_CART))
-EXPORT_MAIN_CART     := $(patsubst %.bin,%.inc,$(OUT_MAIN_CART))
-
 OUT_MAIN_CD          := $(OUT_PATH)/mcd_framework_main_cd.bin
+SYM_MAIN_CART        := $(patsubst $(OUT_PATH)/%.bin,$(BUILD_PATH)/%.sym,$(OUT_MAIN_CART))
 SYM_MAIN_CD          := $(patsubst $(OUT_PATH)/%.bin,$(BUILD_PATH)/%.sym,$(OUT_MAIN_CD))
+EXPORT_MAIN_CART     := $(patsubst %.bin,%.inc,$(OUT_MAIN_CART))
 EXPORT_MAIN_CD       := $(patsubst %.bin,%.inc,$(OUT_MAIN_CD))
-
 LINKER_MAIN          := linker_main.link
 OFFSET_MAIN          := MegaCdMain
 
@@ -54,17 +51,12 @@ OFFSET_MAIN          := MegaCdMain
 # Sub CPU program files
 # ------------------------------------------------------------------------------
 
-SRC_PATH_SUB         := $(SRC_PATH)/sub_cpu
-BUILD_PATH_SUB       := $(subst $(SRC_PATH),$(BUILD_PATH),$(SRC_PATH_SUB))
-
 SRC_SUB              := $(wildcard $(SRC_PATH_SUB)/*.asm)
 OBJ_SUB              := $(patsubst $(SRC_PATH)/%.asm,$(BUILD_PATH)/%.o,$(SRC_SUB))
 DEPEND_SUB           := $(patsubst %.o,%.d,$(OBJ_SUB))
-
 OUT_SUB              := $(OUT_PATH)/mcd_framework_sub.bin
 SYM_SUB              := $(patsubst $(OUT_PATH)/%.bin,$(BUILD_PATH)/%.sym,$(OUT_SUB))
 EXPORT_SUB           := $(patsubst %.bin,%.inc,$(OUT_SUB))
-
 LINKER_SUB           := linker_sub.link
 
 # ------------------------------------------------------------------------------

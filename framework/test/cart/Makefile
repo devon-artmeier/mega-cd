@@ -9,19 +9,11 @@ include ../../common.mk
 # ------------------------------------------------------------------------------
 
 OUT_PATH             := out
+OUT_PATH_EXISTS      := $(wildcard $(OUT_PATH))
 SRC_PATH             := src
 INCLUDE_PATH         := ../../include
 FRAMEWORK_PATH       := ../../out
 BUILD_PATH           := $(OUT_PATH)/build
-
-OUT_PATH_EXISTS      := $(wildcard $(OUT_PATH))
-
-# ------------------------------------------------------------------------------
-# Tool flags
-# ------------------------------------------------------------------------------
-
-VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH) -I$(FRAMEWORK_PATH)
-MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH) -i $(FRAMEWORK_PATH)
 
 # ------------------------------------------------------------------------------
 # Files
@@ -30,10 +22,15 @@ MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH) -i $(FRAMEWORK_PATH
 SRC                  := $(wildcard $(SRC_PATH)/*.asm)
 OBJ                  := $(patsubst $(SRC_PATH)/%.asm,$(BUILD_PATH)/%.o,$(SRC))
 DEPEND               := $(patsubst %.o,%.d,$(OBJ))
-
 OUT                  := $(OUT_PATH)/mcd_cart_test.gen
 
-LINKER               := linker.link
+# ------------------------------------------------------------------------------
+# Tool flags
+# ------------------------------------------------------------------------------
+
+VASM_FLAGS           := $(VASM_FLAGS) -I$(INCLUDE_PATH) -I$(FRAMEWORK_PATH)
+VLINK_FLAGS          := $(VLINK_FLAGS) -T linker.link
+MKASMDEP_FLAGS       := $(MKASMDEP_FLAGS) -i $(INCLUDE_PATH) -i $(FRAMEWORK_PATH)
 
 # ------------------------------------------------------------------------------
 # Reserved rules
@@ -62,8 +59,8 @@ endif
 
 $(OUT): $(OBJ) | $(OUT_PATH)
 	$(LINK_MSG)
-	@$(VLINK) $(VLINK_FLAGS) -T $(LINKER) -o $@ $^
-	@$(MDROMFIX) -q $@
+	@$(VLINK) $(VLINK_FLAGS) -o $@ $^
+	@$(MDROMFIX) $(MDROMFIX_FLAGS) $@
 
 $(OBJ): $(BUILD_PATH)/%.o: $(SRC_PATH)/%.asm | $(BUILD_PATH) $(DEPEND)
 	$(ASSEMBLE_MSG)
