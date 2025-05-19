@@ -27,11 +27,11 @@ Main:
 	vdpCmd move.l,0,CRAM,WRITE,VDP_CTRL
 	move.w	#$E0E,VDP_DATA
 
-	bsr.w	InitCdDrive+McdLib
-	bsr.w	WaitCdDriveReady+McdLib
+	bsr.w	InitCdDrive
+	bsr.w	WaitCdDriveReady
 
 	moveq	#2,d0
-	bsr.w	LoopCdda+McdLib
+	bsr.w	LoopCdda
 
 	vdpCmd move.l,0,CRAM,WRITE,VDP_CTRL
 	move.w	#$E0,VDP_DATA

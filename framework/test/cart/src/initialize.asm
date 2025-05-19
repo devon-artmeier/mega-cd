@@ -145,7 +145,7 @@ HardReset:
 .ChecksumGood:
 	lea	SubCpuProgram,a0				; Initialize Sub CPU
 	move.l	#SUB_CPU_PROGRAM_SIZE,d0
-	bsr.w	InitSubCpu+McdLib
+	bsr.w	InitSubCpu
 	bne.s	.GoToMain					; If it was successful, branch
 
 	vdpCmd move.l,0,CRAM,WRITE,(a5)				; Display yellow

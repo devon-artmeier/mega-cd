@@ -22,8 +22,8 @@
 ; Library
 ; ------------------------------------------------------------------------------
 
-	xdef McdLib
-McdLib:
+	xdef MegaCdMain
+MegaCdMain:
 	incbin	"mcd_framework_main_cart.bin"
 	even
 

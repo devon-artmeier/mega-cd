@@ -48,6 +48,7 @@ SYM_MAIN_CD          := $(patsubst $(OUT_PATH)/%.bin,$(BUILD_PATH)/%.sym,$(OUT_M
 EXPORT_MAIN_CD       := $(patsubst %.bin,%.inc,$(OUT_MAIN_CD))
 
 LINKER_MAIN          := linker_main.link
+OFFSET_MAIN          := MegaCdMain
 
 # ------------------------------------------------------------------------------
 # Sub CPU program files
@@ -93,7 +94,7 @@ endif
 
 $(EXPORT_MAIN_CART): $(SYM_MAIN_CART) | $(OUT_PATH) $(OUT_MAIN_CART)
 	$(EXPORT_MSG)
-	@$(DUMPASMSYM) $(DUMPASMSYM_FLAGS) -o $@ $^
+	@$(DUMPASMSYM) $(DUMPASMSYM_FLAGS) -f $(OFFSET_MAIN) -o $@ $^
 	
 $(OUT_MAIN_CART): $(OBJ_MAIN_CART) | $(OUT_PATH)
 	$(LINK_MSG)
@@ -113,7 +114,7 @@ $(DEPEND_MAIN_CART): $(BUILD_PATH_MAIN_CART)/%.d: $(SRC_PATH_MAIN)/%.asm | $(BUI
 
 $(EXPORT_MAIN_CD): $(SYM_MAIN_CD) | $(OUT_PATH) $(OUT_MAIN_CD)
 	$(EXPORT_MSG)
-	@$(DUMPASMSYM) $(DUMPASMSYM_FLAGS) -o $@ $^
+	@$(DUMPASMSYM) $(DUMPASMSYM_FLAGS) -f $(OFFSET_MAIN) -o $@ $^
 	
 $(OUT_MAIN_CD): $(OBJ_MAIN_CD) | $(OUT_PATH)
 	$(LINK_MSG)
