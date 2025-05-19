@@ -7,6 +7,5 @@ SECTIONS {
 		*(code);
 		. = ALIGN(2);
 		*(data);
-		MCD_FUNCTIONS_END = ALIGN(0x10);
 	} > prg
 }
