@@ -7,5 +7,6 @@ SECTIONS {
 		*(code);
 		. = ALIGN(2);
 		*(data);
+		. = ALIGN(2);
 	} > prg
 }
